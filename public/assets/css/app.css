@@ -1,0 +1,308 @@
+/* Paleta Institucional Inspirada en el Beni */
+:root {
+    --trini-green: #0d3b18;
+    --trini-green-light: #1b632c;
+    --trini-gold: #ffc107;
+    --trini-gold-hover: #e0a800;
+    --trini-bg-body: #f8faf9;
+    --trini-card-border: #e9ecef;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #2b2f33;
+    background-color: var(--trini-bg-body);
+}
+
+/* Navbar */
+.navbar-trinidad {
+    background-color: var(--trini-green);
+}
+.page-home > .navbar-trinidad {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 10;
+    background: rgba(9, 42, 17, 0.94);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+#explorar,
+#guia-trinidad,
+#unirse {
+    scroll-margin-top: 5rem;
+}
+.brand-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--trini-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hero */
+.hero-trinidad {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100svh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    padding-block: 6rem 3rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    isolation: isolate;
+    background: radial-gradient(circle at 80% 20%, rgba(255, 193, 7, 0.15), transparent 35%),
+                linear-gradient(135deg, #092a11 0%, #155724 100%);
+
+}
+.hero-video,
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.hero-video {
+    display: block;
+    z-index: 0;
+    object-fit: cover;
+    object-position: center center;
+    pointer-events: none;
+}
+.hero-overlay {
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(5, 25, 11, 0.65), rgba(13, 59, 24, 0.3));
+    pointer-events: none;
+}
+.hero-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+.hero-content .lead {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+@media (max-width: 991.98px) {
+    .page-home .navbar-collapse {
+        background: rgba(9, 42, 17, 0.97);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+}
+.search-box-hero {
+    max-width: 680px;
+    width: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.search-box-hero input {
+    min-width: 0;
+}
+.search-box-hero:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.25) !important;
+}
+
+@media (max-width: 575.98px) {
+
+    .hero-content {
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2rem, 10vw, 3rem);
+    }
+
+    .hero-content .lead {
+        font-size: 1rem;
+    }
+
+    .search-box-hero {
+        padding: 0.4rem !important;
+    }
+
+    .search-box-hero input {
+        font-size: 0.9rem;
+    }
+}
+
+.btn-xs {
+    font-size: 0.75rem;
+}
+
+/* Category Chips */
+.chip-filter {
+    background-color: #ffffff;
+    border: 1px solid var(--trini-card-border);
+    color: #495057;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border-radius: 50rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.chip-filter .bi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chip-filter .bi::before {
+    display: block;
+}
+.chip-filter:hover {
+    background-color: #f1f3f5;
+    border-color: #ced4da;
+    color: #212529;
+}
+.chip-filter.active {
+    background-color: var(--trini-green);
+    border-color: var(--trini-green);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(13, 59, 24, 0.25);
+}
+
+@media (min-width: 768px) {
+    .chip-filter {
+        width: 4rem;
+        height: 4rem;
+        font-size: 1.6rem;
+    }
+}
+
+/* Place Cards */
+.place-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+.place-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 1.8rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header-place {
+    background: linear-gradient(135deg, var(--trini-green) 0%, var(--trini-green-light) 100%);
+}
+
+.place-icon-bubble {
+    width: 62px;
+    height: 62px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-publico {
+    background-color: #198754;
+    color: #ffffff;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.72rem;
+}
+.badge-comercio {
+    background-color: var(--trini-gold);
+    color: #212529;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.72rem;
+}
+
+.icon-circle {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tarjetas de consejos del viajero */
+.guide-card {
+    --guide-color: #14633d;
+    --guide-text: #ffffff;
+    --guide-copy: #f0fff6;
+    transition: background-color 1.25s ease, transform 1.25s ease, box-shadow 1.25s ease;
+    box-shadow: inset 0 -3px 0 var(--guide-color);
+}
+.guide-card-transport {
+    --guide-color: #ffc107;
+    --guide-text: #292109;
+    --guide-copy: #3e320d;
+}
+.guide-card-sunset {
+    --guide-color: #086b86;
+    --guide-copy: #eefbff;
+}
+.guide-card h5,
+.guide-card p {
+    transition: color 1.25s ease;
+}
+.guide-card .icon-circle {
+    transition: background-color 1.25s ease, color 1.25s ease, transform 1.25s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .guide-card:hover {
+        background-color: var(--guide-color) !important;
+        transform: translateY(-7px);
+        box-shadow: 0 16px 30px rgba(9, 42, 17, 0.18);
+    }
+    .guide-card:hover h5 {
+        color: var(--guide-text) !important;
+    }
+    .guide-card:hover p {
+        color: var(--guide-copy) !important;
+    }
+    .guide-card:hover .icon-circle {
+        background-color: #ffffff !important;
+        color: var(--guide-color) !important;
+        transform: scale(2.08);
+    }
+    .guide-card-transport:hover .icon-circle {
+        color: #856000 !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .guide-card,
+    .guide-card h5,
+    .guide-card p,
+    .guide-card .icon-circle {
+        transition: none;
+    }
+    .guide-card:hover,
+    .guide-card:hover .icon-circle {
+        transform: none;
+    }
+}
+
+.hero-cta {
+    background: linear-gradient(135deg, #092a11 0%, #155724 100%);
+    border: 2px solid rgba(255, 193, 7, 0.3);
+}
+
+.extra-small {
+    font-size: 0.75rem;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

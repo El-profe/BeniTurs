@@ -1,0 +1,15 @@
+# trinidad_turismo/public/.htaccess
+# Redirección de todas las solicitudes hacia el Front Controller
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Si la petición es un archivo o directorio físico existente, servirlo directamente (CSS, JS, imágenes)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Enviar cualquier otra solicitud a index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

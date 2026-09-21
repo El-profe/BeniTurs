@@ -1,0 +1,23 @@
+# trinidad_turismo/.htaccess
+# Configuración perimetral de seguridad para Apache en XAMPP
+
+# Desactivar listado de directorios
+Options -Indexes
+
+# Proteger directorios internos contra acceso HTTP directo
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloquear el acceso directo a carpetas sensibles desde el navegador
+    RewriteRule ^(app|config|database|storage|docs)(/.*)?$ - [F,L,NC]
+
+    # Redirigir el acceso raíz a la carpeta public/
+    RewriteCond %{REQUEST_URI} !^/trinidad_turismo/public/
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+</IfModule>
