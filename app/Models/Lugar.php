@@ -17,7 +17,7 @@ class Lugar {
         
         $sql = "SELECT l.id_lugar, l.nombre, l.slug, l.descripcion, l.direccion, 
                        l.referencia_ubicacion, l.horario_atencion, l.tipo_lugar,
-                       l.whatsapp_contacto, l.telefono_contacto,
+                       l.whatsapp_contacto, l.telefono_contacto, l.id_categoria, l.coordenadas_gps,
                        c.nombre AS categoria, c.icono AS categoria_icono,
                        (SELECT f.nombre_archivo FROM fotografias f WHERE f.id_lugar = l.id_lugar AND f.es_principal = 1 LIMIT 1) AS imagen
                 FROM lugares l

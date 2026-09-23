@@ -61,85 +61,107 @@
         <?php endforeach; ?>
     </div>
 
-    <!-- Cuadrícula Dinámica con Fotografías -->
-    <div class="row g-4" id="contenedorLugares">
-        <?php if (!empty($lugares)): ?>
-            <?php foreach ($lugares as $lug): ?>
-                <div class="col-md-6 col-lg-4 item-lugar">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden place-card">
-                        
-                        <!-- Cabecera con Imagen de Referencia o Ilustración de Respaldo -->
-                        <?php if (!empty($lug['imagen'])): ?>
-                            <div class="position-relative" style="height: 200px; background-color: #092611;">
-                                <img src="<?= htmlspecialchars($baseUrl) ?>/imagen?f=<?= urlencode($lug['imagen']) ?>" 
-                                     alt="<?= htmlspecialchars($lug['nombre']) ?>" 
-                                     class="w-100 h-100 object-fit-cover">
-                                <span class="badge <?= $lug['tipo_lugar'] === 'PUBLICO' ? 'badge-publico' : 'badge-comercio' ?> position-absolute top-0 end-0 m-3 rounded-pill fw-bold shadow-sm">
-                                    <?= $lug['tipo_lugar'] === 'PUBLICO' ? 'Gratuito' : 'Comercio' ?>
-                                </span>
-                            </div>
-                        <?php else: ?>
-                            <div class="card-header-place p-4 text-white text-center position-relative">
-                                <span class="badge <?= $lug['tipo_lugar'] === 'PUBLICO' ? 'badge-publico' : 'badge-comercio' ?> position-absolute top-0 end-0 m-3 rounded-pill fw-bold">
-                                    <?= $lug['tipo_lugar'] === 'PUBLICO' ? 'Gratuito' : 'Comercio' ?>
-                                </span>
-                                <div class="place-icon-bubble mx-auto mb-2 shadow-sm">
-                                    <i class="bi <?= htmlspecialchars($lug['categoria_icono']) ?> fs-3 text-success"></i>
-                                </div>
-                                <h5 class="fw-bold mb-1 text-white text-truncate"><?= htmlspecialchars($lug['nombre']) ?></h5>
-                                <span class="extra-small text-white-50 text-uppercase fw-semibold tracking-wide">
-                                    <?= htmlspecialchars($lug['categoria']) ?>
-                                </span>
-                            </div>
-                        <?php endif; ?>
+    <!-- Barra de Búsqueda y Botón Cerca de Mí -->
+    <div class="row align-items-center g-2 mb-4">
+        <div class="col-md-7 col-lg-8">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="inputBuscarLugar" class="form-control border-start-0 ps-0" placeholder="Buscar por nombre, especialidad o dirección..." aria-label="Buscar lugares">
+            </div>
+        </div>
+        <div class="col-md-5 col-lg-4 text-md-end">
+            <!-- BOTÓN GEOLOCALIZACIÓN -->
+            <button type="button" id="btnCercaDeMi" class="btn btn-outline-success w-100 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span id="btnCercaDeMiTexto">Lugares cerca de mí</span>
+            </button>
+        </div>
+    </div>
 
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body p-4 d-flex flex-column">
-                            <?php if (!empty($lug['imagen'])): ?>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-light text-success border border-success-subtle rounded-pill extra-small">
-                                        <i class="bi <?= htmlspecialchars($lug['categoria_icono']) ?> me-1"></i> <?= htmlspecialchars($lug['categoria']) ?>
-                                    </span>
-                                </div>
-                                <h5 class="fw-bold text-dark text-truncate mb-2"><?= htmlspecialchars($lug['nombre']) ?></h5>
-                            <?php endif; ?>
+    <!-- Alerta de estado de geolocalización (Oculta por defecto) -->
+    <div id="alertaGeolocalizacion" class="alert alert-info alert-dismissible fade d-none rounded-4 small mb-4 border-0 shadow-sm" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-compass-fill fs-5 text-primary"></i>
+            <span id="alertaGeoTexto"></span>
+        </div>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 
-                            <p class="card-text text-secondary small flex-grow-1 line-clamp-3 mb-3">
-                                <?= htmlspecialchars(mb_strimwidth($lug['descripcion'], 0, 140, '...')) ?>
-                            </p>
-
-                            <?php if (!empty($lug['horario_atencion'])): ?>
-                                <div class="place-meta border-top pt-3 mb-3 small">
-                                    <div class="text-muted extra-small text-truncate">
-                                        <i class="bi bi-clock me-1 text-warning"></i> <?= htmlspecialchars($lug['horario_atencion']) ?>
+    <!-- Contenedor compatible con los filtros actuales del catálogo -->
+    <div id="contenedorLugares">
+        <!-- Contenedor de la Cuadrícula de Tarjetas -->
+        <div class="row g-4" id="gridLugaresCatalogo">
+            <?php if (!empty($lugares)): ?>
+                <?php foreach ($lugares as $l): ?>
+                    <!-- Elemento de Tarjeta con data-coordenadas -->
+                    <div class="col-md-6 col-lg-4 tarjeta-lugar-col item-lugar"
+                         data-id="<?= (int)$l['id_lugar'] ?>"
+                         data-nombre="<?= htmlspecialchars(mb_strtolower($l['nombre'], 'UTF-8')) ?>"
+                         data-categoria="<?= (int)$l['id_categoria'] ?>"
+                         data-coordenadas="<?= htmlspecialchars($l['coordenadas_gps'] ?? '') ?>">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative card-hover-turismo place-card">
+                            <!-- Imagen de Portada -->
+                            <div class="position-relative" style="height: 200px; background-color: #e9ecef;">
+                                <?php $fotoPrincipal = $l['foto_principal'] ?? $l['imagen'] ?? ''; ?>
+                                <?php if (!empty($fotoPrincipal)): ?>
+                                    <img src="<?= htmlspecialchars($baseUrl) ?>/imagen?f=<?= urlencode($fotoPrincipal) ?>"
+                                         class="w-100 h-100 object-fit-cover" alt="<?= htmlspecialchars($l['nombre']) ?>">
+                                <?php else: ?>
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                        <i class="bi bi-image display-6"></i>
                                     </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="d-flex gap-2">
-                                <a href="<?= htmlspecialchars($baseUrl) ?>/catalogo/detalle?slug=<?= urlencode($lug['slug']) ?>" 
-                                   class="btn btn-success rounded-pill w-100 fw-semibold btn-sm py-2">
-                                    Ver Ficha <i class="bi bi-arrow-right ms-1"></i>
-                                </a>
-                                <?php if (!empty($lug['whatsapp_contacto'])): 
-                                    $wa = preg_replace('/[^0-9]/', '', $lug['whatsapp_contacto']);
-                                ?>
-                                    <a href="https://wa.me/<?= $wa ?>" target="_blank" rel="noopener noreferrer" 
-                                       class="btn btn-outline-success rounded-pill btn-sm px-3" title="Contactar por WhatsApp">
-                                        <i class="bi bi-whatsapp"></i>
-                                    </a>
                                 <?php endif; ?>
+
+                                <!-- Categoría Badge -->
+                                <span class="badge bg-dark bg-opacity-75 text-white position-absolute top-0 start-0 m-3 rounded-pill small px-3 py-1">
+                                    <i class="bi <?= htmlspecialchars($l['categoria_icono'] ?? 'bi-geo-alt') ?> me-1"></i>
+                                    <?= htmlspecialchars($l['categoria'] ?? 'General') ?>
+                                </span>
+
+                                <!-- Badge Dinámico de Distancia (Se inyecta por JS) -->
+                                <div class="badge-distancia-container position-absolute top-0 end-0 m-3"></div>
+                            </div>
+
+                            <!-- Cuerpo de la Tarjeta -->
+                            <div class="card-body p-4 d-flex flex-column">
+                                <h5 class="fw-bold text-dark mb-1 text-truncate" title="<?= htmlspecialchars($l['nombre']) ?>">
+                                    <?= htmlspecialchars($l['nombre']) ?>
+                                </h5>
+                                <small class="text-muted mb-2 d-block text-truncate">
+                                    <i class="bi bi-geo-alt me-1 text-danger"></i> <?= htmlspecialchars($l['direccion'] ?? '') ?>
+                                </small>
+                                <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    <?= htmlspecialchars($l['descripcion'] ?? '') ?>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-auto">
+                                    <?php if (!empty($l['telefono_contacto']) || !empty($l['whatsapp_contacto'])): ?>
+                                        <?php
+                                            $wa = preg_replace('/[^0-9]/', '', ($l['whatsapp_contacto'] ?? '') ?: ($l['telefono_contacto'] ?? ''));
+                                            if (strlen($wa) === 8) $wa = '591' . $wa;
+                                        ?>
+                                        <a href="https://wa.me/<?= $wa ?>" target="_blank" rel="noopener noreferrer"
+                                           class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                                            <i class="bi bi-whatsapp me-1"></i> Contactar
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted extra-small">Sin contacto directo</span>
+                                    <?php endif; ?>
+                                    <a href="<?= htmlspecialchars($baseUrl) ?>/catalogo/detalle?slug=<?= urlencode($l['slug']) ?>"
+                                       class="btn btn-sm btn-success rounded-pill px-3 fw-semibold">
+                                        Ver Ficha &rarr;
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="col-12 text-center py-5 text-muted">
+                    <i class="bi bi-compass display-4 d-block mb-2"></i>
+                    No hay lugares disponibles en este momento.
                 </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-info-circle display-4 text-muted mb-3 d-block"></i>
-                <h5 class="text-muted"><?= $categoriaSeleccionada !== null ? 'Todavía no hay lugares publicados en esta categoría.' : 'No existen lugares publicados disponibles en este momento.' ?></h5>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </section>
 
