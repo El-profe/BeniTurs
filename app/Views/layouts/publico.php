@@ -17,14 +17,12 @@
     <!-- Navegación Superior -->
     <nav class="navbar navbar-expand-xl navbar-dark navbar-trinidad sticky-top shadow-sm py-2">
         <div class="container">
-            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= htmlspecialchars($baseUrl) ?>/">
-                <div class="brand-badge">
-                    <i class="bi bi-compass-fill fs-5"></i>
-                </div>
-                <div class="lh-sm">
-                    <span class="fs-5 fw-bold text-white d-block">Beni<span class="text-warning">Turs</span></span>
-                </div>
-            </a>
+            <a class="navbar-brand d-flex align-items-center" href="<?= htmlspecialchars($baseUrl) ?>/">
+    <img src="<?= htmlspecialchars($baseUrl) ?>/assets/img/logo.png" 
+         alt="BeniTurs" 
+         class="navbar-logo"
+         height="42">
+</a>
             
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Abrir menú">
                 <span class="navbar-toggler-icon"></span>

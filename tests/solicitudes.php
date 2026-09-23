@@ -4,6 +4,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require dirname(__DIR__) . '/app/Core/Autoloader.php';
 App\Core\Autoloader::register();
 date_default_timezone_set('America/La_Paz');
+putenv('BENITURS_CREDENTIAL_KEY=' . base64_encode(random_bytes(32)));
 use App\Services\SolicitudService;
 use App\Services\ComprobanteService;
 
@@ -41,6 +42,9 @@ try {
     $sql=preg_replace('/^USE .*?;/m','',$sql);
     $db->exec($sql);
     $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/004_cuarentena_aprovisionamiento.sql'));
+    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/005_autoservicio.sql'));
+    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/006_flujo_solicitud_comercial.sql'));
+    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/006_flujo_solicitud_comercial.sql'));
     $db->prepare("INSERT INTO administradores (nombre,usuario,email,password_hash) VALUES ('Auditor','auditor','auditor@test.invalid',?)")
         ->execute([password_hash('PruebaAdmin123!',PASSWORD_BCRYPT)]);
     $db->exec("INSERT INTO categorias (nombre,slug,tipo_defecto) VALUES ('Comercial','comercial','COMERCIAL'),('Publico','publico','PUBLICO')");
@@ -79,8 +83,8 @@ try {
         'usuario_solicitado'=>'negocio_prueba','password'=>' clave con espacios ', 'numero_comprobante'=>'OP-123',
         'comprobante'=>new CURLFile($tmp.'/valido.png','image/png','pago.png')];
     foreach ([
-        ['csrf_token'=>'invalido'], ['id_categoria'=>'2'], ['usuario_solicitado'=>'<script>'],
-        ['password'=>'corta'], ['nombre_establecimiento'=>str_repeat('x',151)], ['plan_solicitado'=>'OTRO'],
+        ['csrf_token'=>'invalido'], ['id_categoria'=>'2'], ['telefono_contacto'=>'123'],
+        ['nombre_solicitante'=>''], ['nombre_establecimiento'=>str_repeat('x',151)], ['plan_solicitado'=>'OTRO'],
         ['comprobante'=>new CURLFile($tmp.'/falso.jpg','image/jpeg','pago.jpg')],
         ['comprobante'=>new CURLFile($tmp.'/grande.png','image/png','pago.png')], ['comprobante'=>'']
     ] as $cambios) {
@@ -88,7 +92,8 @@ try {
         verificar(in_array($status,[403,422],true),'Entrada invalida rechazada: '.array_key_first($cambios));
     }
     verificar((int)$db->query('SELECT COUNT(*) FROM solicitudes')->fetchColumn()===0 && count(glob($tmp.'/comprobantes/*'))===0,'Rechazos no dejan solicitudes ni archivos');
-    require __DIR__ . '/autoservicio_casos.php';
+    unset($payload['usuario_solicitado'], $payload['password']);
+    require __DIR__ . '/flujo_comercial_casos.php';
 } finally {
     if (is_resource($server)) { proc_terminate($server); proc_close($server); }
     if ($db->inTransaction()) $db->rollBack();

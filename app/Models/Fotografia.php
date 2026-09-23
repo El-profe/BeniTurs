@@ -34,6 +34,12 @@ class Fotografia {
         return (int)$this->db->lastInsertId();
     }
 
+    public function listarPorLugar(int $idLugar): array {
+        $stmt = $this->db->prepare("SELECT nombre_archivo FROM fotografias WHERE id_lugar = :id ORDER BY es_principal DESC, nombre_archivo ASC");
+        $stmt->execute([':id' => $idLugar]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function obtenerPrincipalPorLugar(int $idLugar): ?array {
         $stmt = $this->db->prepare("SELECT * FROM fotografias WHERE id_lugar = :id AND es_principal = 1 LIMIT 1");
         $stmt->execute([':id' => $idLugar]);

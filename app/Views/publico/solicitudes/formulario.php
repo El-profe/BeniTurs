@@ -1,243 +1,67 @@
-<div class="container py-5 my-2">
-    <div class="row justify-content-center">
-        <div class="col-xl-9 col-lg-10">
-            
-            <!-- Encabezado -->
-            <div class="text-center mb-5">
-                <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill text-uppercase mb-2 shadow-sm" style="font-size: 0.75rem;">
-                    <i class="bi bi-shop me-1"></i> Publicación Comercial
-                </span>
-                <h2 class="display-6 fw-bold text-dark mb-2">Haz que tu Negocio destaque en Trinidad</h2>
-                <p class="text-muted mx-auto" style="max-width: 600px;">
-                    Crea tu cuenta y empieza a preparar tu ficha hoy. Tu negocio aparecerá en la guía cuando verifiquemos el pago.
-                </p>
-            </div>
-
-            <div id="solicitudAlertContainer" aria-live="polite" tabindex="-1"></div>
-
-            <form id="formSolicitudComercial" action="<?= htmlspecialchars($baseUrl) ?>/api/solicitudes/enviar" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <!-- Campo oculto que guarda la categoría elegida por los iconos -->
-                <input type="hidden" name="id_categoria" id="id_categoria_seleccionada" value="" required>
-
-                <!-- 1. SELECCIÓN VISUAL DE PLANES -->
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold text-dark mb-3">
-                        <span class="badge bg-success-subtle text-success rounded-circle me-1">1</span> 
-                        Selecciona tu Plan Comercial
-                    </h5>
-                    
-                    <div class="row g-3">
-                        <!-- Tarjeta Plan Mensual -->
-                        <div class="col-md-6">
-                            <label class="plan-card w-100 p-4 rounded-4 border position-relative cursor-pointer">
-                                <input type="radio" name="plan_solicitado" value="MENSUAL" class="form-check-input plan-radio d-none" checked>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1 fw-bold small">Flexibilidad</span>
-                                    <i class="bi bi-calendar-check fs-4 text-success"></i>
-                                </div>
-                                <h4 class="fw-bold text-dark mb-1">Plan Mensual</h4>
-                                <div class="d-flex align-items-baseline gap-1 my-2">
-                                    <span class="display-6 fw-bold text-dark">Bs <?= number_format($tarifaMensual, 0) ?></span>
-                                    <span class="text-muted small">/ mes</span>
-                                </div>
-                                <p class="text-muted extra-small mb-0">Facturación mes a mes. Cancela o renueva cuando gustes.</p>
-                            </label>
-                        </div>
-
-                        <!-- Tarjeta Plan Anual (Destacado) -->
-                        <div class="col-md-6">
-                            <label class="plan-card w-100 p-4 rounded-4 border position-relative cursor-pointer featured-plan">
-                                <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-3 rounded-pill fw-bold" style="font-size: 0.7rem;">
-                                    <i class="bi bi-stars"></i> Ahorras Bs 500
-                                </span>
-                                <input type="radio" name="plan_solicitado" value="ANUAL" class="form-check-input plan-radio d-none">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-success text-white rounded-pill px-3 py-1 fw-bold small">Recomendado</span>
-                                </div>
-                                <h4 class="fw-bold text-dark mb-1">Plan Anual</h4>
-                                <div class="d-flex align-items-baseline gap-1 my-2">
-                                    <span class="display-6 fw-bold text-success">Bs <?= number_format($tarifaAnual, 0) ?></span>
-                                    <span class="text-muted small">/ año</span>
-                                </div>
-                                <p class="text-muted extra-small mb-0"><strong>2 meses gratis</strong> (Pagas 10 meses y recibes 12). Máxima visibilidad todo el año.</p>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. SELECCIÓN VISUAL DE CATEGORÍA (ICONOS DE UN CLIC) -->
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold text-dark mb-3">
-                        <span class="badge bg-success-subtle text-success rounded-circle me-1">2</span> 
-                        ¿Cuál es el rubro de tu negocio? *
-                    </h5>
-                    
-                    <div class="row g-2" id="gridCategoriasSelector">
-                        <?php foreach ($categorias as $cat): ?>
-                            <div class="col-6 col-md-4 col-lg-3">
-                                <button type="button" class="btn-categoria-tile w-100 p-3 text-center rounded-4 border" data-id="<?= $cat['id_categoria'] ?>">
-                                    <div class="icon-bubble-category mx-auto mb-2">
-                                        <i class="bi <?= htmlspecialchars($cat['icono']) ?> fs-3"></i>
-                                    </div>
-                                    <span class="small fw-bold text-dark d-block text-truncate"><?= htmlspecialchars($cat['nombre']) ?></span>
-                                </button>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <small id="categoriaErrorHelp" class="text-danger extra-small mt-2 d-none"><i class="bi bi-exclamation-circle me-1"></i>Debes seleccionar un rubro para continuar.</small>
-                </div>
-
-                <!-- 3. DATOS BÁSICOS RÁPIDOS -->
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
-                    <h5 class="fw-bold text-dark mb-4">
-                        <span class="badge bg-success-subtle text-success rounded-circle me-1">3</span> 
-                        Información del Establecimiento
-                    </h5>
-
-                    <div class="row g-3">
-                        <div class="col-md-7">
-                            <label class="form-label fw-semibold small">Nombre de tu Negocio *</label>
-                            <input type="text" name="nombre_establecimiento" class="form-control form-control-lg fs-6" placeholder="Ej. Restaurante Puerto Viejo" required>
-                        </div>
-
-                        <div class="col-md-5">
-                            <label class="form-label fw-semibold small">Tu Teléfono / WhatsApp *</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-success fw-bold"><i class="bi bi-whatsapp"></i></span>
-                                <input type="tel" name="telefono_contacto" class="form-control form-control-lg fs-6" placeholder="Ej. 73912345" required>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small">¿Dónde queda ubicado en Trinidad? *</label>
-                            <input type="text" name="direccion" class="form-control" placeholder="Ej. Av. 6 de Agosto casi esquina Cipriano Barace" required>
-                        </div>
-
-                        <!-- Atajos de Horario (Un solo clic) -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small">Horario de Atención (Elige un atajo o escribe):</label>
-                            <div class="d-flex flex-wrap gap-2 mb-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-horario-quick" data-horario="Almuerzo y Cena (11:30 a 15:00 y 18:30 a 23:30)">
-                                    <i class="bi bi-clock me-1"></i> Almuerzo y Cena
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-horario-quick" data-horario="Horario Continuo (08:00 a 20:00)">
-                                    <i class="bi bi-sun me-1"></i> Continuo (08:00 a 20:00)
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-horario-quick" data-horario="Tarde y Noche / Bar (18:00 a 02:00)">
-                                    <i class="bi bi-moon me-1"></i> Noche (18:00 a 02:00)
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-horario-quick" data-horario="Atención 24 Horas">
-                                    <i class="bi bi-infinity me-1"></i> 24 Horas
-                                </button>
-                            </div>
-                            <input type="text" name="horarios" id="inputHorarios" class="form-control form-control-sm" placeholder="O escribe tu horario específico...">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small">Breve descripción de lo que ofreces *</label>
-                            <textarea name="descripcion" rows="2" class="form-control" placeholder="Ej. Especialidad en pacú al horno, keoperí tradicional y jugos de frutas de la región..." required></textarea>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small">Tu Nombre o de la persona de contacto *</label>
-                            <input type="text" name="nombre_solicitante" class="form-control" placeholder="Ej. Carla Méndez" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small">Correo Electrónico (Opcional)</label>
-                            <input type="email" name="email_contacto" class="form-control" placeholder="contacto@minegocio.bo">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold mb-3">4. Acceso a tu portal</h5>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="usuarioSolicitado" class="form-label">Usuario deseado *</label>
-                            <input id="usuarioSolicitado" name="usuario_solicitado" class="form-control" required minlength="3" maxlength="60" pattern="[A-Za-z0-9_.\-]{3,60}" autocomplete="username">
-                            <small class="text-muted">Letras, números, puntos, guiones y guiones bajos. Sujeto a disponibilidad.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="passwordSolicitado" class="form-label">Contraseña *</label>
-                            <input type="password" id="passwordSolicitado" name="password" class="form-control" required minlength="8" maxlength="72" autocomplete="new-password">
-                            <small class="text-muted">Mínimo 8 caracteres; máximo 72 bytes. Podrás ingresar inmediatamente para configurar tu negocio.</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold mb-3">5. Comprobante de pago</h5>
-                    <label for="numeroComprobante" class="form-label">Número de operación o comprobante *</label>
-                    <input id="numeroComprobante" name="numero_comprobante" class="form-control mb-3" maxlength="100" required>
-                    <label for="comprobanteSolicitud" class="form-label">Captura de transferencia bancaria / QR *</label>
-                    <input type="file" id="comprobanteSolicitud" name="comprobante" class="form-control" accept="image/jpeg,image/png,image/webp" required>
-                    <small class="text-muted">JPG, PNG o WEBP, máximo 5 MB. Solo administración puede revisar tu comprobante. Mientras lo verificamos, podrás subir fotos y preparar promociones.</small>
-                </div>
-                <div class="text-end mb-5">
-                    <button type="submit" id="btnEnviarSolicitud" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fw-bold text-dark shadow">
-                        <i class="bi bi-send-check-fill me-1"></i> Crear mi cuenta y configurar mi negocio
-                    </button>
-                </div>
-            </form>
-
+<?php
+$escape = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+$qr = $cobro['qr_url'] ?? '';
+$qrValido = is_string($qr) && preg_match('~\A(?:https?://|/(?!/))~i', $qr);
+?>
+<div class="container py-5">
+    <div class="row justify-content-center"><div class="col-lg-9 col-xl-8">
+        <div class="text-center mb-4">
+            <span class="badge bg-warning text-dark rounded-pill mb-2">Publicación comercial</span>
+            <h1 class="h2 fw-bold">Publica tu negocio en BeniTurs</h1>
+            <p class="text-muted">Completa tus datos, elige un plan y envía tu comprobante. Activaremos tu negocio cuando verifiquemos el pago.</p>
         </div>
-    </div>
+        <ol class="list-unstyled d-flex justify-content-between gap-2 small mb-4" aria-label="Pasos de la solicitud">
+            <li data-step-indicator="0" class="fw-bold text-success" aria-current="step">1. Datos del negocio</li>
+            <li data-step-indicator="1">2. Elegir plan</li>
+            <li data-step-indicator="2">3. Pago y comprobante</li>
+        </ol>
+        <div id="solicitudAlertContainer" aria-live="polite" tabindex="-1"></div>
+        <form id="formSolicitudComercial" action="<?= $escape($baseUrl) ?>/solicitudes/enviar" method="post" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
+            <input type="hidden" name="monto_declarado" value="250.00">
+            <section data-wizard-step="0" class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <h2 class="h4 mb-4" tabindex="-1">Datos del negocio y del propietario</h2>
+                <div class="row g-3">
+                    <div class="col-md-7"><label for="solNombre" class="form-label">Nombre del establecimiento *</label><input id="solNombre" name="nombre_establecimiento" class="form-control" maxlength="150" required></div>
+                    <div class="col-md-5"><label for="solCategoria" class="form-label">Categoría *</label><select id="solCategoria" name="id_categoria" class="form-select" required><option value="">Selecciona una categoría</option><?php foreach ($categorias as $cat): ?><option value="<?= (int)$cat['id_categoria'] ?>"><?= $escape($cat['nombre']) ?></option><?php endforeach; ?></select></div>
+                    <div class="col-12"><label for="solDireccion" class="form-label">Dirección en Trinidad *</label><input id="solDireccion" name="direccion" class="form-control" maxlength="255" autocomplete="street-address" required></div>
+                    <div class="col-md-6"><label for="solTelefono" class="form-label">Teléfono / WhatsApp *</label><input id="solTelefono" name="telefono_contacto" type="tel" class="form-control" maxlength="30" autocomplete="tel" placeholder="Ej. 70000000 o +591 70000000" required></div>
+                    <div class="col-md-6"><label for="solDueno" class="form-label">Nombre completo del dueño *</label><input id="solDueno" name="nombre_solicitante" class="form-control" maxlength="120" autocomplete="name" required></div>
+                    <div class="col-12"><label for="solDescripcion" class="form-label">Breve descripción *</label><textarea id="solDescripcion" name="descripcion" rows="3" class="form-control" maxlength="10000" required></textarea></div>
+                    <div class="col-md-6"><label for="solHorario" class="form-label">Horarios de atención</label><input id="solHorario" name="horarios" class="form-control" maxlength="150"></div>
+                    <div class="col-md-6"><label for="solEmail" class="form-label">Correo electrónico (opcional)</label><input id="solEmail" name="email_contacto" type="email" class="form-control" maxlength="120" autocomplete="email"></div>
+                </div>
+                <button type="button" data-next class="btn btn-success rounded-pill mt-4 align-self-end">Siguiente: Elegir Plan <i class="bi bi-arrow-right ms-1"></i></button>
+            </section>
+            <section data-wizard-step="1" class="card border-0 shadow-sm rounded-4 p-4 p-md-5" hidden>
+                <h2 class="h4 mb-4" tabindex="-1">Elige tu plan</h2>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="plan-card d-block h-100 border rounded-4 p-4 active-plan"><input type="radio" name="plan_solicitado" value="MENSUAL" class="form-check-input me-2" checked required><span class="fw-bold">Plan Mensual</span><span class="d-block h2 my-3">Bs 250 <small class="fs-6 text-muted">/ mes</small></span><span class="text-muted">Un mes de publicación.</span></label></div>
+                    <div class="col-md-6"><label class="plan-card d-block h-100 border rounded-4 p-4"><input type="radio" name="plan_solicitado" value="ANUAL" class="form-check-input me-2" required><span class="fw-bold">Plan Anual</span><span class="d-block h2 my-3">Bs 2,500 <small class="fs-6 text-muted">/ año</small></span><span class="badge bg-warning text-dark">Ahorro de 2 meses · Bs 500</span></label></div>
+                </div>
+                <div class="d-flex justify-content-between gap-2 mt-4"><button type="button" data-back class="btn btn-outline-secondary rounded-pill">Atrás</button><button type="button" data-next class="btn btn-success rounded-pill">Siguiente: Realizar Pago</button></div>
+            </section>
+            <section data-wizard-step="2" class="card border-0 shadow-sm rounded-4 p-4 p-md-5" hidden>
+                <h2 class="h4 mb-3" tabindex="-1">Pago QR y comprobante</h2>
+                <p class="fs-5">Monto a pagar: <strong id="montoPlan" class="text-success" aria-live="polite">Bs 250</strong> · <span id="nombrePlan">Plan Mensual</span></p>
+                <div class="row g-4 align-items-center mb-4">
+                    <div class="col-md-6 text-center">
+                        <?php if ($qrValido): ?><img src="<?= $escape($qr) ?>" class="img-fluid rounded-3 border" style="max-height: 280px;" alt="QR institucional de recaudación BeniTurs">
+                        <?php else: ?><p class="alert alert-warning mb-0">El QR de pago todavía no está disponible.</p><?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <h3 class="h6 fw-bold">Cuenta de recaudación · Trinidad</h3>
+                        <?php if ($cobro['banco'] && $cobro['titular'] && $cobro['cuenta']): ?>
+                            <dl class="mb-0"><dt>Banco</dt><dd><?= $escape($cobro['banco']) ?></dd><dt>Titular</dt><dd><?= $escape($cobro['titular']) ?></dd><dt>Número de cuenta</dt><dd><?= $escape($cobro['cuenta']) ?></dd></dl>
+                        <?php else: ?><p class="text-muted">Los datos bancarios todavía no están disponibles.</p><?php endif; ?>
+                        <p class="small text-muted mt-3 mb-0">Verifica el titular e ingresa el monto de tu plan antes de confirmar la transferencia.</p>
+                    </div>
+                </div>
+                <label for="numeroComprobante" class="form-label">Número de operación (opcional)</label><input id="numeroComprobante" name="numero_comprobante" class="form-control mb-3" maxlength="100">
+                <label for="comprobante" class="form-label">Foto o captura del comprobante *</label><input id="comprobante" name="comprobante" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" required aria-describedby="comprobanteAyuda"><small id="comprobanteAyuda" class="text-muted">JPG, PNG o WEBP. Máximo 5 MB.</small>
+                <div class="d-flex flex-wrap justify-content-between gap-2 mt-4"><button type="button" data-back class="btn btn-outline-secondary rounded-pill">Atrás</button><button id="btnSubmitSolicitud" type="submit" class="btn btn-success rounded-pill">Enviar Solicitud y Comprobante</button></div>
+            </section>
+        </form>
+        <noscript><p class="alert alert-warning mt-3">Activa JavaScript para completar los tres pasos.</p></noscript>
+    </div></div>
 </div>
-
-<style>
-/* Estilos interactivos del nuevo formulario */
-.cursor-pointer { cursor: pointer; }
-
-.plan-card {
-    background-color: #ffffff;
-    transition: all 0.25s ease;
-}
-.plan-card:hover {
-    border-color: #198754 !important;
-    background-color: #fcfdfc;
-}
-.plan-card.active-plan {
-    border-color: #198754 !important;
-    border-width: 2px !important;
-    background-color: #f1f8f3;
-    box-shadow: 0 8px 20px rgba(25, 135, 84, 0.12);
-}
-
-.featured-plan {
-    border-color: rgba(255, 193, 7, 0.5) !important;
-}
-
-/* Botones mosaico de categorías */
-.btn-categoria-tile {
-    background-color: #ffffff;
-    transition: all 0.2s ease;
-    border-color: #e9ecef;
-}
-.btn-categoria-tile:hover {
-    transform: translateY(-2px);
-    border-color: #198754;
-}
-.btn-categoria-tile.active-category {
-    background-color: #0d3b18;
-    border-color: #0d3b18;
-}
-.btn-categoria-tile.active-category span {
-    color: #ffffff !important;
-}
-.btn-categoria-tile.active-category .icon-bubble-category {
-    background-color: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-}
-
-.icon-bubble-category {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #e8f5e9;
-    color: #198754;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-</style>

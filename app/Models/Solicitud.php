@@ -16,11 +16,11 @@ class Solicitud {
                     nombre_establecimiento, id_categoria, plan_solicitado, nombre_solicitante, 
                     telefono_contacto, email_contacto, direccion, descripcion, 
                     horarios, usuario_solicitado, password_hash_solicitado,
-                    comprobante_archivo, numero_comprobante, estado
+                    comprobante_archivo, numero_comprobante, monto_declarado, estado
                 ) VALUES (
                     :nombre_establecimiento, :id_categoria, :plan_solicitado, :nombre_solicitante,
                     :telefono_contacto, :email_contacto, :direccion, :descripcion,
-                    :horarios, :usuario, :hash, :archivo, :comprobante, 'PENDIENTE'
+                    :horarios, :usuario, :hash, :archivo, :comprobante, :monto, 'PENDIENTE'
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -34,10 +34,11 @@ class Solicitud {
             ':direccion'             => $datos['direccion'],
             ':descripcion'           => $datos['descripcion'],
             ':horarios'              => $datos['horarios'] ?? null,
-            ':usuario'               => $datos['usuario_solicitado'],
-            ':hash'                  => $datos['password_hash_solicitado'],
+            ':usuario'               => '',
+            ':hash'                  => '',
             ':archivo'               => $datos['comprobante_archivo'],
-            ':comprobante'           => $datos['numero_comprobante'] ?? null
+            ':comprobante'           => $datos['numero_comprobante'] ?? null,
+            ':monto'                 => $datos['monto_declarado']
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -78,7 +79,7 @@ class Solicitud {
         return $res ?: null;
     }
 
-    public function cambiarEstado(int $idSolicitud, string $nuevoEstado, int $idAdmin, ?string $observaciones = null): bool {
+    public function cambiarEstado(int $idSolicitud, string $nuevoEstado, ?int $idAdmin, ?string $observaciones = null): bool {
         if (!in_array($nuevoEstado, ['PENDIENTE', 'ACEPTADA', 'RECHAZADA'])) {
             return false;
         }

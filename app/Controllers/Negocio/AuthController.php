@@ -67,6 +67,9 @@ class AuthController extends Controller {
         $_SESSION['negocio_user']     = $cuenta['usuario'];
 
         $this->cuentaModel->actualizarUltimoAcceso($cuenta['id_cuenta']);
+        // La entrega ya se realizó: retirar la copia cifrada de la clave temporal.
+        \App\Core\Database::getConnection()->prepare('UPDATE solicitudes SET credenciales_cifradas=NULL WHERE id_cuenta_creada=?')
+            ->execute([$cuenta['id_cuenta']]);
 
         header("Location: {$this->config['base_url']}/negocio/dashboard");
         exit();

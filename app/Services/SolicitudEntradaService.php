@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\Categoria;
 use App\Models\Solicitud;
+use App\Core\Database;
 use InvalidArgumentException;
 use Throwable;
 
@@ -23,19 +24,14 @@ class SolicitudEntradaService {
             }
             $datos[$campo] = $valor;
         }
-        foreach (['nombre_establecimiento','nombre_solicitante','telefono_contacto','direccion','descripcion','numero_comprobante'] as $campo) {
+        foreach (['nombre_establecimiento','nombre_solicitante','telefono_contacto','direccion','descripcion'] as $campo) {
             if ($datos[$campo] === '') throw new InvalidArgumentException('Complete todos los campos obligatorios.');
         }
         if (!in_array($datos['plan_solicitado'], ['MENSUAL','ANUAL'], true)) {
             throw new InvalidArgumentException('Seleccione un plan mensual o anual.');
         }
-        if (!preg_match('/\A[A-Za-z0-9_.-]{3,60}\z/D', $datos['usuario_solicitado'])) {
-            throw new InvalidArgumentException('El usuario debe tener de 3 a 60 letras, números, puntos, guiones o guiones bajos.');
-        }
-        $password = $entrada['password'] ?? null;
-        if (!is_string($password) || strlen($password) < 8 || strlen($password) > 72 || str_contains($password, "\0")) {
-            throw new InvalidArgumentException('La contraseña debe tener entre 8 y 72 bytes.');
-        }
+        // El precio y las credenciales nunca se aceptan del navegador.
+        $datos['monto_declarado'] = $datos['plan_solicitado'] === 'ANUAL' ? 2500.00 : 250.00;
         if ($datos['email_contacto'] !== '' && !filter_var($datos['email_contacto'], FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('El correo electrónico no es válido.');
         }
@@ -51,17 +47,23 @@ class SolicitudEntradaService {
             throw new InvalidArgumentException('Seleccione una categoría comercial activa.');
         }
         $datos['id_categoria'] = $id;
-        $datos['password_hash_solicitado'] = password_hash($password, PASSWORD_BCRYPT);
         return $datos;
     }
 
     public static function recibir(array $entrada, array $archivo): int {
         $datos = self::validarDatos($entrada);
+        $db = Database::getConnection();
+        if ($db->inTransaction()) throw new \RuntimeException('Ya hay una transacción en curso.');
         $nombre = ComprobanteService::subir($archivo);
         try {
+            if (!Database::beginTransaction()) throw new \RuntimeException('Ya hay una transacción en curso.');
             $datos['comprobante_archivo'] = $nombre;
-            return (new Solicitud())->registrar($datos);
+            $id = (new Solicitud())->registrar($datos);
+            TelegramService::encolar($id, 'NUEVA');
+            $db->commit();
+            return $id;
         } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
             if (!ComprobanteService::eliminar($nombre)) error_log('No se pudo retirar un comprobante sin solicitud.');
             throw $e;
         }

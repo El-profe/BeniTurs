@@ -4,7 +4,7 @@ namespace App\Controllers\Publico;
 use App\Core\Controller;
 use App\Models\Categoria;
 use App\Middleware\CsrfMiddleware;
-use App\Services\RegistroNegocioService;
+use App\Services\SolicitudEntradaService;
 use InvalidArgumentException;
 use Throwable;
 
@@ -17,6 +17,7 @@ class SolicitudController extends Controller {
             'categorias' => $categorias,
             'tarifaMensual' => 250.00,
             'tarifaAnual' => 2500.00,
+            'cobro' => require dirname(__DIR__, 3) . '/config/comercial.php',
             'csrfToken' => CsrfMiddleware::obtenerToken()
         ], 'publico');
     }
@@ -34,7 +35,7 @@ class SolicitudController extends Controller {
         try {
             $archivo = $_FILES['comprobante'] ?? [];
             if (!is_array($archivo)) throw new InvalidArgumentException('Adjunte un comprobante válido.');
-            $cuenta = RegistroNegocioService::registrar($_POST, $archivo);
+            SolicitudEntradaService::recibir($_POST, $archivo);
         } catch (InvalidArgumentException $e) {
             $this->json(['success'=>false, 'error'=>$e->getMessage()], 422);
             return;
@@ -43,12 +44,7 @@ class SolicitudController extends Controller {
             $this->json(['success'=>false, 'error'=>'No se pudo guardar la solicitud. Intente nuevamente.'], 500);
             return;
         }
-        session_regenerate_id(true);
-        $_SESSION['negocio_id'] = $cuenta['id_cuenta'];
-        $_SESSION['negocio_lugar_id'] = $cuenta['id_lugar'];
-        $_SESSION['negocio_nombre'] = $cuenta['nombre_negocio'];
-        $_SESSION['negocio_user'] = $cuenta['usuario'];
-        $this->json(['success'=>true, 'redirect'=>'/negocio/dashboard',
-            'mensaje'=>'Tu cuenta está lista. Ya puedes configurar tu ficha mientras verificamos el comprobante.']);
+        $this->json(['success'=>true,
+            'message'=>'Solicitud enviada con éxito. Verificaremos tu abono en breve.']);
     }
 }

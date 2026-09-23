@@ -1,5 +1,7 @@
 Trinidad Turismo — estructura inicial de carpetas
 
+Flujo comercial actual: ver [incorporación por pasos, aprobación atómica y Telegram](docs/flujo_comercial.md). Sustituye el registro inmediato de cuentas; requiere la migración 006 y configurar los datos de cobro y del bot. La descripción de la estructura inicial que sigue es histórica.
+
 Este paquete contiene las carpetas del proyecto y esta guía. Los archivos PHP, JavaScript, CSS, SQL y Bootstrap se implementarán o incorporarán en los siguientes pasos. La estructura todavía no ejecuta una aplicación web.
 
 Tecnologías acordadas: PHP puro con programación orientada a objetos, arquitectura MVC, Bootstrap, CSS, JavaScript nativo con Fetch y JSON, Apache y MariaDB de XAMPP, y PDO para el acceso a datos.

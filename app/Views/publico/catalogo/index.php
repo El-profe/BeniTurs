@@ -1,7 +1,7 @@
 <!-- Hero Principal con Buscador Central -->
 <section class="hero-trinidad text-white position-relative">
     <video class="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
-        <source src="<?= htmlspecialchars($baseUrl) ?>/assets/video/video2.mp4" type="video/mp4">
+        <source src="<?= htmlspecialchars($baseUrl) ?>/assets/video/video3.mp4" type="video/mp4">
     </video>
     <div class="hero-overlay" aria-hidden="true"></div>
 
@@ -35,133 +35,127 @@
     </div>
 </section>
 
-<!-- Catálogo con Tarjetas Fotográficas -->
-<section class="container py-5" id="explorar">
-    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
-        <div>
-            <h2 class="fw-bold text-dark mb-1">Explorar por Categoría</h2>
-            <p class="text-muted small mb-0">Selecciona para filtrar los atractivos y establecimientos al instante</p>
-        </div>
-        <div>
-            <span id="contadorResultados" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold">
-                <?= count($lugares) ?> lugares encontrados
-            </span>
-        </div>
+<!-- Catálogo y Filtros de Categorías Multicolor -->
+<section class="container py-4" id="explorar">
+    <!-- Encabezado Centrado -->
+    <div class="text-center mb-3">
+        <h2 class="fw-bold text-dark mb-1">Explorar por Categoría</h2>
+        <p class="text-muted small mb-2">Selecciona un rubro o activa tu ubicación para ver los más cercanos</p>
+        <span id="contadorResultados" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-semibold small">
+            <?= count($lugares) ?> lugares encontrados
+        </span>
     </div>
 
-    <!-- Píldoras de Categoría (Chips) -->
-    <div class="d-flex flex-wrap gap-2 mb-4 category-chips-container pb-2">
-        <button class="chip-filter<?= $categoriaSeleccionada === null ? ' active' : '' ?>" data-categoria="" aria-label="Todos" title="Todos">
-            <i class="bi bi-grid-fill" aria-hidden="true"></i>
+    <!-- Píldoras de Categoría + Botón GPS Cerca de Mí -->
+    <div class="category-filter-container d-flex flex-wrap justify-content-center align-items-center gap-2 gap-md-3 mb-4 py-2">
+        <!-- 1. Botón Todos -->
+        <button type="button" class="chip-filter-icon cat-color-all<?= $categoriaSeleccionada === null ? ' active' : '' ?>" data-categoria="" title="Todos los lugares" aria-label="Todos los lugares">
+            <i class="bi bi-grid-fill"></i>
         </button>
-        <?php foreach ($categorias as $c): ?>
-            <button class="chip-filter<?= $categoriaSeleccionada === (int)$c['id_categoria'] ? ' active' : '' ?>" data-categoria="<?= $c['id_categoria'] ?>" aria-label="<?= htmlspecialchars($c['nombre']) ?>" title="<?= htmlspecialchars($c['nombre']) ?>">
-                <i class="bi <?= htmlspecialchars($c['icono']) ?>" aria-hidden="true"></i>
+
+        <!-- 2. BOTÓN GPS: Cerca de Mí (Icono especial con radar) -->
+        <button type="button" id="btnCercaDeMi" class="chip-filter-icon cat-color-geo" title="Lugares cerca de mi ubicación" aria-label="Lugares cerca de mí">
+            <i class="bi bi-geo-alt-fill"></i>
+        </button>
+
+        <!-- 3. Categorías Dinámicas de la BD -->
+        <?php
+        $colorClasses = [
+            'cat-color-nature', // Verde Esmeralda
+            'cat-color-gastro', // Naranja Cálido
+            'cat-color-night',  // Violeta Neón
+            'cat-color-hotel',  // Azul Cielo
+            'cat-color-shop',   // Rosa Coral
+            'cat-color-gold'    // Dorado
+        ];
+        $index = 0;
+        foreach ($categorias as $c):
+            $currentClass = $colorClasses[$index % count($colorClasses)];
+            $index++;
+        ?>
+            <button type="button" class="chip-filter-icon <?= $currentClass ?><?= $categoriaSeleccionada === (int)$c['id_categoria'] ? ' active' : '' ?>"
+                    data-categoria="<?= $c['id_categoria'] ?>"
+                    title="<?= htmlspecialchars($c['nombre']) ?>"
+                    aria-label="<?= htmlspecialchars($c['nombre']) ?>">
+                <i class="bi <?= htmlspecialchars($c['icono']) ?>"></i>
             </button>
         <?php endforeach; ?>
     </div>
 
-    <!-- Barra de Búsqueda y Botón Cerca de Mí -->
-    <div class="row align-items-center g-2 mb-4">
-        <div class="col-md-7 col-lg-8">
-            <div class="input-group">
-                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                <input type="text" id="inputBuscarLugar" class="form-control border-start-0 ps-0" placeholder="Buscar por nombre, especialidad o dirección..." aria-label="Buscar lugares">
-            </div>
-        </div>
-        <div class="col-md-5 col-lg-4 text-md-end">
-            <!-- BOTÓN GEOLOCALIZACIÓN -->
-            <button type="button" id="btnCercaDeMi" class="btn btn-outline-success w-100 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center justify-content-center gap-2">
-                <i class="bi bi-geo-alt-fill"></i>
-                <span id="btnCercaDeMiTexto">Lugares cerca de mí</span>
-            </button>
-        </div>
+    <!-- Alerta de estado de geolocalización (Flotante y compacta) -->
+    <div id="alertaGeolocalizacion" class="alert alert-info alert-dismissible fade d-none rounded-4 small mb-4 border-0 shadow-sm mx-auto text-center" style="max-width: 650px;" role="alert">
+        <span id="alertaGeoTexto"></span>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Alerta de estado de geolocalización (Oculta por defecto) -->
-    <div id="alertaGeolocalizacion" class="alert alert-info alert-dismissible fade d-none rounded-4 small mb-4 border-0 shadow-sm" role="alert">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-compass-fill fs-5 text-primary"></i>
-            <span id="alertaGeoTexto"></span>
-        </div>
-        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-
-    <!-- Contenedor compatible con los filtros actuales del catálogo -->
-    <div id="contenedorLugares">
-        <!-- Contenedor de la Cuadrícula de Tarjetas -->
-        <div class="row g-4" id="gridLugaresCatalogo">
-            <?php if (!empty($lugares)): ?>
-                <?php foreach ($lugares as $l): ?>
-                    <!-- Elemento de Tarjeta con data-coordenadas -->
-                    <div class="col-md-6 col-lg-4 tarjeta-lugar-col item-lugar"
-                         data-id="<?= (int)$l['id_lugar'] ?>"
-                         data-nombre="<?= htmlspecialchars(mb_strtolower($l['nombre'], 'UTF-8')) ?>"
-                         data-categoria="<?= (int)$l['id_categoria'] ?>"
-                         data-coordenadas="<?= htmlspecialchars($l['coordenadas_gps'] ?? '') ?>">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative card-hover-turismo place-card">
-                            <!-- Imagen de Portada -->
-                            <div class="position-relative" style="height: 200px; background-color: #e9ecef;">
-                                <?php $fotoPrincipal = $l['foto_principal'] ?? $l['imagen'] ?? ''; ?>
-                                <?php if (!empty($fotoPrincipal)): ?>
-                                    <img src="<?= htmlspecialchars($baseUrl) ?>/imagen?f=<?= urlencode($fotoPrincipal) ?>"
-                                         class="w-100 h-100 object-fit-cover" alt="<?= htmlspecialchars($l['nombre']) ?>">
-                                <?php else: ?>
-                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
-                                        <i class="bi bi-image display-6"></i>
-                                    </div>
-                                <?php endif; ?>
-
-                                <!-- Categoría Badge -->
-                                <span class="badge bg-dark bg-opacity-75 text-white position-absolute top-0 start-0 m-3 rounded-pill small px-3 py-1">
-                                    <i class="bi <?= htmlspecialchars($l['categoria_icono'] ?? 'bi-geo-alt') ?> me-1"></i>
-                                    <?= htmlspecialchars($l['categoria'] ?? 'General') ?>
+    <!-- Cuadrícula de Fichas de Lugares -->
+    <div class="row g-4" id="gridLugaresCatalogo">
+        <?php if (!empty($lugares)): ?>
+            <?php foreach ($lugares as $l): ?>
+                <?php
+                    $icono = ($l['categoria_icono'] ?? '') ?: 'bi-geo-alt';
+                    $descripcion = $l['descripcion'] ?? '';
+                    if (mb_strlen($descripcion, 'UTF-8') > 140) {
+                        $descripcion = mb_substr($descripcion, 0, 140, 'UTF-8') . '...';
+                    }
+                ?>
+                <div class="col-md-6 col-lg-4 item-lugar tarjeta-lugar-col"
+                     data-id="<?= (int)$l['id_lugar'] ?>"
+                     data-nombre="<?= htmlspecialchars(mb_strtolower($l['nombre'], 'UTF-8')) ?>"
+                     data-categoria="<?= (int)$l['id_categoria'] ?>"
+                     data-coordenadas="<?= htmlspecialchars($l['coordenadas_gps'] ?? '') ?>">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative place-card">
+                        <?php if (!empty($l['imagen'])): ?>
+                            <div class="position-relative" style="height: 200px; background-color: #092611;">
+                                <img src="<?= htmlspecialchars($baseUrl) ?>/imagen?f=<?= urlencode($l['imagen']) ?>"
+                                     alt="<?= htmlspecialchars($l['nombre']) ?>"
+                                     class="w-100 h-100 object-fit-cover">
+                                <span class="badge bg-dark bg-opacity-75 text-white position-absolute top-0 start-0 m-3 rounded-pill fw-bold shadow-sm">
+                                    <i class="bi <?= htmlspecialchars($icono) ?> me-1"></i> <?= htmlspecialchars($l['categoria'] ?? '') ?>
                                 </span>
-
-                                <!-- Badge Dinámico de Distancia (Se inyecta por JS) -->
-                                <div class="badge-distancia-container position-absolute top-0 end-0 m-3"></div>
                             </div>
-
-                            <!-- Cuerpo de la Tarjeta -->
-                            <div class="card-body p-4 d-flex flex-column">
-                                <h5 class="fw-bold text-dark mb-1 text-truncate" title="<?= htmlspecialchars($l['nombre']) ?>">
-                                    <?= htmlspecialchars($l['nombre']) ?>
-                                </h5>
-                                <small class="text-muted mb-2 d-block text-truncate">
-                                    <i class="bi bi-geo-alt me-1 text-danger"></i> <?= htmlspecialchars($l['direccion'] ?? '') ?>
-                                </small>
-                                <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                    <?= htmlspecialchars($l['descripcion'] ?? '') ?>
-                                </p>
-                                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-auto">
-                                    <?php if (!empty($l['telefono_contacto']) || !empty($l['whatsapp_contacto'])): ?>
-                                        <?php
-                                            $wa = preg_replace('/[^0-9]/', '', ($l['whatsapp_contacto'] ?? '') ?: ($l['telefono_contacto'] ?? ''));
-                                            if (strlen($wa) === 8) $wa = '591' . $wa;
-                                        ?>
-                                        <a href="https://wa.me/<?= $wa ?>" target="_blank" rel="noopener noreferrer"
-                                           class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
-                                            <i class="bi bi-whatsapp me-1"></i> Contactar
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="text-muted extra-small">Sin contacto directo</span>
-                                    <?php endif; ?>
-                                    <a href="<?= htmlspecialchars($baseUrl) ?>/catalogo/detalle?slug=<?= urlencode($l['slug']) ?>"
-                                       class="btn btn-sm btn-success rounded-pill px-3 fw-semibold">
-                                        Ver Ficha &rarr;
-                                    </a>
+                        <?php else: ?>
+                            <div class="card-header-place p-4 text-white text-center position-relative">
+                                <div class="place-icon-bubble mx-auto mb-2 shadow-sm">
+                                    <i class="bi <?= htmlspecialchars($icono) ?> fs-3 text-success"></i>
                                 </div>
+                                <h5 class="fw-bold mb-1 text-white text-truncate"><?= htmlspecialchars($l['nombre']) ?></h5>
+                                <span class="extra-small text-white-50 text-uppercase fw-semibold tracking-wide">
+                                    <?= htmlspecialchars($l['categoria'] ?? '') ?>
+                                </span>
+                            </div>
+                        <?php endif; ?>
+                        <div class="badge-distancia-container position-absolute top-0 end-0 m-3"></div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <?php if (!empty($l['imagen'])): ?>
+                                <h5 class="fw-bold text-dark text-truncate mb-2"><?= htmlspecialchars($l['nombre']) ?></h5>
+                            <?php endif; ?>
+                            <p class="card-text text-secondary small flex-grow-1 line-clamp-3 mb-3">
+                                <?= htmlspecialchars($descripcion) ?>
+                            </p>
+                            <?php if (!empty($l['horario_atencion'])): ?>
+                                <div class="place-meta border-top pt-3 mb-3 small">
+                                    <div class="text-muted extra-small text-truncate">
+                                        <i class="bi bi-clock me-1 text-warning"></i> <?= htmlspecialchars($l['horario_atencion']) ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <div class="d-flex gap-2">
+                                <a href="<?= htmlspecialchars($baseUrl) ?>/catalogo/detalle?slug=<?= urlencode($l['slug']) ?>"
+                                   class="btn btn-success rounded-pill w-100 fw-semibold btn-sm py-2">
+                                    Ver Ficha <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12 text-center py-5 text-muted">
-                    <i class="bi bi-compass display-4 d-block mb-2"></i>
-                    No hay lugares disponibles en este momento.
                 </div>
-            <?php endif; ?>
-        </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-compass display-4 d-block mb-2"></i>
+                No hay lugares disponibles en este momento.
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 

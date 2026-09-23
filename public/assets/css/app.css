@@ -44,7 +44,26 @@ body {
     align-items: center;
     justify-content: center;
 }
+/* Logo en la barra de navegación */
+.navbar-logo {
+    height: 52px;
+    width: auto;
+    max-height: 52px;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
 
+.navbar-logo:hover {
+    transform: scale(1.03);
+}
+
+/* Ajuste proporcional para celulares */
+@media (max-width: 576px) {
+    .navbar-logo {
+        height: 44px;
+        max-height: 44px;
+    }
+}
 /* Hero */
 .hero-trinidad {
     width: 100%;
@@ -233,51 +252,82 @@ body {
     justify-content: center;
 }
 
-/* Tarjetas de consejos del viajero */
+/* ==========================================================================
+   TARJETAS DE CONSEJOS DEL VIAJERO (HOVER INVERTIDO SUAVE)
+   ========================================================================== */
 .guide-card {
     --guide-color: #14633d;
     --guide-text: #ffffff;
     --guide-copy: #f0fff6;
-    transition: background-color 1.25s ease, transform 1.25s ease, box-shadow 1.25s ease;
+    background-color: #f8faf9;
+    border: 1px solid transparent !important;
     box-shadow: inset 0 -3px 0 var(--guide-color);
+    /* Transición fluida de 0.38s tanto al entrar como al salir */
+    transition: background-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.38s ease;
+    will-change: transform, background-color, box-shadow;
 }
+
 .guide-card-transport {
     --guide-color: #ffc107;
     --guide-text: #292109;
     --guide-copy: #3e320d;
 }
+
 .guide-card-sunset {
     --guide-color: #086b86;
+    --guide-text: #ffffff;
     --guide-copy: #eefbff;
 }
+
+/* Transición sincronizada para todos los textos internos */
 .guide-card h5,
 .guide-card p {
-    transition: color 1.25s ease;
+    transition: color 0.35s ease;
 }
+
+/* Contenedor del Icono circular */
 .guide-card .icon-circle {
-    transition: background-color 1.25s ease, color 1.25s ease, transform 1.25s ease;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.38s ease,
+                transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 @media (hover: hover) and (pointer: fine) {
     .guide-card:hover {
         background-color: var(--guide-color) !important;
-        transform: translateY(-7px);
-        box-shadow: 0 16px 30px rgba(9, 42, 17, 0.18);
+        transform: translateY(-6px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
     }
+
     .guide-card:hover h5 {
         color: var(--guide-text) !important;
     }
+
     .guide-card:hover p {
         color: var(--guide-copy) !important;
     }
+
+    /* Inversión limpia: fondo blanco, color temático y escala controlada */
     .guide-card:hover .icon-circle {
         background-color: #ffffff !important;
         color: var(--guide-color) !important;
-        transform: scale(2.08);
+        transform: scale(1.12); /* Crecimiento armónico sin deformar */
     }
+
     .guide-card-transport:hover .icon-circle {
         color: #856000 !important;
     }
 }
+
 @media (prefers-reduced-motion: reduce) {
     .guide-card,
     .guide-card h5,
@@ -316,4 +366,281 @@ body {
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ==========================================================================
+   FILTROS DE CATEGORÍAS MULTICOLOR & RESPONSIVE
+   ========================================================================== */
+
+/* Contenedor Centrado */
+.category-filter-container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Base del Botón Circular */
+.chip-filter-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s ease,
+                color 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chip-filter-icon:hover {
+    transform: translateY(-3px) scale(1.06);
+}
+
+.chip-filter-icon.active {
+    transform: translateY(-2px) scale(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   COLORES INDIVIDUALES POR CATEGORÍA
+   -------------------------------------------------------------------------- */
+
+/* 1. Todos (Verde Bosque Institucional) */
+.chip-filter-icon.cat-color-all,
+.category-filter-container .chip-filter-icon:nth-child(1) {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0d3b18;
+}
+.chip-filter-icon.cat-color-all:hover,
+.category-filter-container .chip-filter-icon:nth-child(1):hover {
+    background-color: #e2e8f0;
+}
+.chip-filter-icon.cat-color-all.active,
+.category-filter-container .chip-filter-icon:nth-child(1).active {
+    background: linear-gradient(135deg, #092611 0%, #155724 100%);
+    border-color: #0d3b18;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(13, 59, 24, 0.35);
+}
+
+/* 2. Naturaleza / Atractivos (Verde Esmeralda) */
+.chip-filter-icon.cat-color-nature,
+.category-filter-container .chip-filter-icon:nth-child(2) {
+    background-color: #ecfdf5;
+    border-color: rgba(16, 185, 129, 0.28);
+    color: #059669;
+}
+.chip-filter-icon.cat-color-nature:hover,
+.category-filter-container .chip-filter-icon:nth-child(2):hover {
+    background-color: #d1fae5;
+    border-color: #10b981;
+}
+.chip-filter-icon.cat-color-nature.active,
+.category-filter-container .chip-filter-icon:nth-child(2).active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* 3. Gastronomía / Cafeterías (Naranja Ámbar) */
+.chip-filter-icon.cat-color-gastro,
+.category-filter-container .chip-filter-icon:nth-child(3) {
+    background-color: #fff7ed;
+    border-color: rgba(249, 115, 22, 0.28);
+    color: #ea580c;
+}
+.chip-filter-icon.cat-color-gastro:hover,
+.category-filter-container .chip-filter-icon:nth-child(3):hover {
+    background-color: #ffedd5;
+    border-color: #f97316;
+}
+.chip-filter-icon.cat-color-gastro.active,
+.category-filter-container .chip-filter-icon:nth-child(3).active {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-color: #f97316;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* 4. Vida Nocturna / Bares (Violeta Neón) */
+.chip-filter-icon.cat-color-night,
+.category-filter-container .chip-filter-icon:nth-child(4) {
+    background-color: #f5f3ff;
+    border-color: rgba(139, 92, 246, 0.28);
+    color: #7c3aed;
+}
+.chip-filter-icon.cat-color-night:hover,
+.category-filter-container .chip-filter-icon:nth-child(4):hover {
+    background-color: #ede9fe;
+    border-color: #8b5cf6;
+}
+.chip-filter-icon.cat-color-night.active,
+.category-filter-container .chip-filter-icon:nth-child(4).active {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    border-color: #8b5cf6;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* 5. Hotelería / Hospedaje (Azul Cielo) */
+.chip-filter-icon.cat-color-hotel,
+.category-filter-container .chip-filter-icon:nth-child(5) {
+    background-color: #f0f9ff;
+    border-color: rgba(2, 132, 199, 0.28);
+    color: #0284c7;
+}
+.chip-filter-icon.cat-color-hotel:hover,
+.category-filter-container .chip-filter-icon:nth-child(5):hover {
+    background-color: #e0f2fe;
+    border-color: #0284c7;
+}
+.chip-filter-icon.cat-color-hotel.active,
+.category-filter-container .chip-filter-icon:nth-child(5).active {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-color: #0284c7;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4);
+}
+
+/* 6. Comercio / Tiendas (Rosa Coral) */
+.chip-filter-icon.cat-color-shop,
+.category-filter-container .chip-filter-icon:nth-child(6) {
+    background-color: #fdf2f8;
+    border-color: rgba(236, 72, 153, 0.28);
+    color: #db2777;
+}
+.chip-filter-icon.cat-color-shop:hover,
+.category-filter-container .chip-filter-icon:nth-child(6):hover {
+    background-color: #fce7f3;
+    border-color: #ec4899;
+}
+.chip-filter-icon.cat-color-shop.active,
+.category-filter-container .chip-filter-icon:nth-child(6).active {
+    background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+    border-color: #ec4899;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+}
+
+/* 7. Categoría Adicional / Cultural (Dorado) */
+.chip-filter-icon.cat-color-gold {
+    background-color: #fefce8;
+    border-color: rgba(234, 179, 8, 0.35);
+    color: #ca8a04;
+}
+.chip-filter-icon.cat-color-gold.active {
+    background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+    border-color: #eab308;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(234, 179, 8, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   ADAPTACIÓN RESPONSIVA (MÓVIL / TABLET)
+   -------------------------------------------------------------------------- */
+@media (max-width: 576px) {
+    .category-filter-container {
+        gap: 0.55rem !important;
+    }
+
+    .chip-filter-icon {
+        width: 46px;
+        height: 46px;
+        font-size: 1.15rem;
+    }
+}
+
+
+/* ==========================================================================
+   BOTÓN GPS "CERCA DE MÍ" DENTRO DE CATEGORÍAS
+   ========================================================================== */
+.cat-color-geo {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.cat-color-geo:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Estado cuando la geolocalización está encendida */
+.cat-color-geo.active {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.25), 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+    animation: pulseGeo 2s infinite;
+}
+
+/* Selección de planes del asistente comercial. */
+#formSolicitudComercial .plan-card {
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+#formSolicitudComercial .plan-card.active-plan {
+    border-color: var(--trini-green) !important;
+    background-color: #eef7f0;
+    box-shadow: 0 0 0 1px var(--trini-green);
+}
+
+#formSolicitudComercial .plan-card:focus-within {
+    outline: 3px solid var(--trini-gold);
+    outline-offset: 3px;
+}
+
+/* Ficha del lugar: fotografía horizontal y panel de información acompañante. */
+.place-detail-photo {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    background-color: #092611;
+}
+
+.place-detail-social {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+}
+
+.place-detail-social .bi {
+    line-height: 1;
+}
+
+@media (min-width: 992px) {
+    .place-detail-media-column {
+        width: 60%;
+    }
+
+    .place-detail-info-column {
+        width: 40%;
+        position: sticky;
+        top: 6rem;
+        align-self: flex-start;
+    }
+
+    .place-detail-info {
+        max-height: calc(100vh - 7rem);
+        max-height: calc(100dvh - 7rem);
+        overflow-y: auto;
+    }
+}
+
+@keyframes pulseGeo {
+    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }

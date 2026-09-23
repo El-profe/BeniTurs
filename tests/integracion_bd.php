@@ -55,6 +55,7 @@ try {
         runSql($db, 'database/migrations/003_duracion_pagos.sql');
         runSql($db, 'database/migrations/004_cuarentena_aprovisionamiento.sql');
         runSql($db, 'database/migrations/005_autoservicio.sql');
+        runSql($db, 'database/migrations/006_flujo_solicitud_comercial.sql');
     }
     check($before === $db->query('SELECT COUNT(*) FROM pagos')->fetchColumn(), 'Migraciones repetibles conservan pagos');
     $lugares = new Lugar();
@@ -95,11 +96,9 @@ try {
     $db->exec("INSERT INTO solicitudes (nombre_establecimiento,id_categoria,plan_solicitado,nombre_solicitante,telefono_contacto,direccion,descripcion,estado) VALUES ('Prueba conversion',2,'ANUAL','Prueba','0','Prueba','Prueba','ACEPTADA')");
     $solicitud=(int)$db->lastInsertId();
     $count=$db->query('SELECT COUNT(*) FROM lugares')->fetchColumn();
-    mustFail(fn()=>SolicitudService::convertirAFicha($solicitud,2147483647),'Fallo de publicacion revierte conversion completa');
+    mustFail(fn()=>SolicitudService::convertirAFicha($solicitud,2147483647),'Conversion antigua no permite saltar la verificacion de pago');
     check($count===$db->query('SELECT COUNT(*) FROM lugares')->fetchColumn(),'No deja lugares incompletos');
-    $nuevo=SolicitudService::convertirAFicha($solicitud,1);
-    check((int)$lugares->buscarPorId($nuevo)['id_solicitud_origen']===$solicitud,'Conversion vincula solicitud y publicacion');
-    mustFail(fn()=>SolicitudService::convertirAFicha($solicitud,1),'Conversion duplicada rechazada');
+    mustFail(fn()=>SolicitudService::convertirAFicha($solicitud,1),'Incluso el administrador debe usar el aprovisionamiento completo');
     check((new App\Models\Solicitud())->buscarPorId($solicitud)['plan_solicitado']==='ANUAL','Conserva plan solicitado para el formulario de pago');
 } finally {
     if ($db->inTransaction()) $db->rollBack();

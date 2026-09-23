@@ -5,6 +5,7 @@ use App\Core\Controller;
 use App\Models\Lugar;
 use App\Models\Categoria;
 use App\Models\Promocion;
+use App\Models\Fotografia;
 use App\Services\MapaService;
 
 class CatalogoController extends Controller {
@@ -56,10 +57,12 @@ class CatalogoController extends Controller {
 
         $promocionModel = new Promocion();
         $promociones = $promocionModel->listarVigentesPublicas((int)$lugar['id_lugar']);
+        $fotografias = (new Fotografia())->listarPorLugar((int)$lugar['id_lugar']);
 
         $this->render('publico/catalogo/detalle', [
             'titulo' => $lugar['nombre'],
             'lugar'  => $lugar,
+            'fotografias' => $fotografias,
             'mapa' => MapaService::desdeCoordenadas($lugar['coordenadas_gps'] ?? null),
             'promociones' => $promociones
         ], 'publico');

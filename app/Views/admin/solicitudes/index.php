@@ -9,12 +9,13 @@
     </div>
     <?php if ($mensaje): ?><div class="alert alert-success" role="status"><?= $escape($mensaje) ?></div><?php endif; ?>
     <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= $escape($error) ?></div><?php endif; ?>
+    <div id="solicitudAdminMensaje" role="status" aria-live="polite" tabindex="-1"></div>
     <div class="table-responsive admin-card">
         <table class="table align-middle">
             <thead><tr><th>ID</th><th>Establecimiento / Plan</th><th>Rubro</th><th>Contacto</th><th>Comprobante</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
             <?php foreach ($solicitudes as $s): ?>
-                <tr>
+                <tr data-solicitud="<?= (int)$s['id_solicitud'] ?>">
                     <td>#<?= (int)$s['id_solicitud'] ?></td>
                     <td><strong><?= $escape($s['nombre_establecimiento']) ?></strong><br>
                         <small><?= $s['plan_solicitado'] === 'ANUAL' ? 'Anual · Bs 2.500' : 'Mensual · Bs 250' ?></small><br>
@@ -27,23 +28,31 @@
                             <small class="d-block"><?= $escape($s['numero_comprobante']) ?></small>
                         <?php else: ?><span class="text-muted">Sin comprobante</span><?php endif; ?>
                     </td>
-                    <td><?= $escape($s['estado']) ?>
+                    <td data-estado><?= $escape($s['estado']) ?>
                         <?php if ($s['id_lugar_creado']): ?><small class="d-block">Ficha #<?= (int)$s['id_lugar_creado'] ?></small><?php endif; ?>
                     </td>
-                    <td>
+                    <td data-acciones>
                         <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#detalle<?= (int)$s['id_solicitud'] ?>">Detalles</button>
-                        <?php if ($s['estado'] === 'PENDIENTE' && $s['comprobante_archivo'] && $s['usuario_solicitado'] && $s['password_hash_solicitado']): ?>
-                            <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/aprovisionar" method="post" class="mt-2 form-aprovisionar">
+                        <?php if ($s['estado'] === 'PENDIENTE' && $s['comprobante_archivo']): ?>
+                            <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/aprovisionar" method="post" class="mt-2 form-aprovisionar" data-solicitud-accion="aprovisionar">
                                 <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                                 <input type="hidden" name="id_solicitud" value="<?= (int)$s['id_solicitud'] ?>">
-                                <button class="btn btn-success btn-sm" type="submit">Verificar y Aprovisionar Todo</button>
+                                <button class="btn btn-success btn-sm" type="submit">Aprobar y Aprovisionar</button>
                             </form>
                         <?php elseif ($s['estado'] === 'PENDIENTE'): ?>
-                            <small class="d-block text-muted">Solicitud incompleta: requiere comprobante y credenciales.</small>
+                            <small class="d-block text-muted">Solicitud incompleta: requiere comprobante.</small>
                         <?php endif; ?>
-                        <?php if ($s['estado'] === 'ACEPTADA' && $s['id_cuenta_creada'] && $s['usuario_solicitado']): ?>
-                            <?php $whatsapp = \App\Services\SolicitudService::enlaceBienvenida($s); ?>
-                            <?php if ($whatsapp): ?><a href="<?= $escape($whatsapp) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm mt-2">Enviar bienvenida por WhatsApp</a><?php endif; ?>
+                        <?php if ($s['estado'] === 'PENDIENTE'): ?>
+                            <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/resolver" method="post" class="mt-2" data-solicitud-accion="rechazar">
+                                <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
+                                <input type="hidden" name="id_solicitud" value="<?= (int)$s['id_solicitud'] ?>">
+                                <input type="hidden" name="estado" value="RECHAZADA">
+                                <button class="btn btn-outline-danger btn-sm" type="submit">Rechazar</button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if ($s['estado'] === 'ACEPTADA' && $s['id_cuenta_creada']): ?>
+                            <?php try { $whatsapp = \App\Services\SolicitudService::enlaceBienvenida($s); } catch (\Throwable $e) { $whatsapp = null; } ?>
+                            <?php if ($whatsapp): ?><a href="<?= $escape($whatsapp) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm mt-2">📲 Enviar Credenciales por WhatsApp</a><?php endif; ?>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -70,9 +79,9 @@
                 <p><strong>Dirección:</strong> <?= $escape($s['direccion']) ?><br>
                     <strong>Horarios:</strong> <?= $escape($s['horarios']) ?><br>
                     <strong>Correo:</strong> <?= $escape($s['email_contacto']) ?><br>
-                    <strong>Usuario solicitado:</strong> <?= $escape($s['usuario_solicitado']) ?></p>
+                    <strong>Usuario asignado:</strong> <?= $escape($s['usuario_solicitado'] ?: 'Se genera al aprobar') ?></p>
                 <?php if ($s['estado'] === 'PENDIENTE'): ?>
-                <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/resolver" method="post">
+                <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/resolver" method="post" data-solicitud-accion="rechazar">
                     <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="id_solicitud" value="<?= (int)$s['id_solicitud'] ?>">
                     <input type="hidden" name="estado" value="RECHAZADA">
@@ -85,12 +94,4 @@
         </div></div>
     </div>
 <?php endforeach; ?>
-<script>
-document.querySelectorAll('.form-aprovisionar').forEach(form => {
-    form.addEventListener('submit', () => {
-        const button = form.querySelector('button[type="submit"]');
-        button.disabled = true;
-        button.textContent = 'Aprovisionando…';
-    });
-});
-</script>
+<script src="<?= $escape($baseUrl) ?>/assets/js/admin/solicitudes.js?v=<?= filemtime(dirname(__DIR__, 4) . '/public/assets/js/admin/solicitudes.js') ?>" defer></script>
