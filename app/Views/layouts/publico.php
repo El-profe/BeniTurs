@@ -15,7 +15,7 @@
 <body class="d-flex flex-column min-vh-100 bg-light<?= !empty($heroPantallaCompleta) ? ' page-home' : '' ?>">
 
     <!-- Navegación Superior -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-trinidad sticky-top shadow-sm py-2">
+    <nav class="navbar navbar-expand-xl navbar-dark navbar-trinidad sticky-top shadow-sm py-2">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= htmlspecialchars($baseUrl) ?>/">
                 <div class="brand-badge">
@@ -26,24 +26,34 @@
                 </div>
             </a>
             
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Abrir menú">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 fw-medium">
+                <ul class="navbar-nav mx-auto mb-2 mb-xl-0 fw-medium">
                     <li class="nav-item">
                         <a class="nav-link active" href="<?= htmlspecialchars($baseUrl) ?>/">
                             <i class="bi bi-house-door me-1"></i> Inicio
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white-50" href="#explorar">
-                            <i class="bi bi-geo-alt me-1"></i> Explorar Lugares
+                        <a class="nav-link" href="<?= htmlspecialchars($baseUrl) ?>/?categoria=hospedaje-hoteles#explorar">
+                            <i class="bi bi-building me-1" aria-hidden="true"></i> Hoteles
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white-50" href="#guia-trinidad">
+                        <a class="nav-link" href="<?= htmlspecialchars($baseUrl) ?>/#explorar" data-catalogo-todos>
+                            <i class="bi bi-geo-alt me-1" aria-hidden="true"></i> Lugares
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= htmlspecialchars($baseUrl) ?>/#transporte">
+                            <i class="bi bi-scooter me-1" aria-hidden="true"></i> Transporte
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="<?= htmlspecialchars($baseUrl) ?>/#guia-trinidad">
                             <i class="bi bi-info-circle me-1"></i> Guía del Viajero
                         </a>
                     </li>

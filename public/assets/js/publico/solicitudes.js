@@ -58,6 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const comprobante = document.getElementById('comprobanteSolicitud');
+        const archivo = comprobante.files[0];
+        comprobante.setCustomValidity('');
+        if (!archivo || archivo.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) {
+            comprobante.setCustomValidity('Adjunta una imagen JPG, PNG o WEBP de hasta 5 MB.');
+            comprobante.reportValidity();
+            comprobante.onchange = () => comprobante.setCustomValidity('');
+            return;
+        }
+        if (!form.reportValidity()) return;
 
         // Validar selección de categoría
         if (!inputCategoria.value) {
@@ -78,6 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await http.post(form.action, formData);
             if (!data.success) throw new Error(data.error || 'No se pudo guardar la solicitud. Intenta nuevamente.');
+            if (data.redirect === '/negocio/dashboard') {
+                window.location.assign(http.buildUrl(data.redirect));
+                return;
+            }
 
             alertBox.innerHTML = `
                 <div class="alert alert-success alert-dismissible fade show rounded-4 p-4 shadow-sm border-0 mb-4" role="alert">

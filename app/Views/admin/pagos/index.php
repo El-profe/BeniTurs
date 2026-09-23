@@ -84,6 +84,9 @@
                                 <td>
                                     <span class="small d-block text-dark fw-medium"><?= htmlspecialchars($p['metodo_pago']) ?></span>
                                     <code class="extra-small text-muted"><?= htmlspecialchars($p['numero_comprobante'] ?: 'Sin comprobante') ?></code>
+                                    <?php if (!empty($p['comprobante_archivo'])): ?>
+                                        <button type="button" class="btn btn-outline-primary btn-sm d-block mt-2" data-bs-toggle="modal" data-bs-target="#comprobantePago<?= (int)$p['id_pago'] ?>">Ver comprobante</button>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($p['estado'] === 'PENDIENTE'): ?>
@@ -114,14 +117,18 @@
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="id_pago" value="<?= $p['id_pago'] ?>">
                                                 <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" title="Confirmar abono y activar ficha">
-                                                    <i class="bi bi-check2 me-1"></i> Confirmar
+                                                    <i class="bi bi-check2 me-1"></i> Confirmar Abono
                                                 </button>
                                             </form>
 
                                             <!-- Botón Anular -->
+                                            <?php if (!empty($p['es_registro_inicial'])): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rechazarRegistro<?= (int)$p['id_pago'] ?>">Rechazar / Eliminar</button>
+                                            <?php else: ?>
                                             <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#modalAnular<?= $p['id_pago'] ?>" title="Anular comprobante" style="width: 32px; height: 32px; padding: 0;">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
+                                            <?php endif; ?>
                                         </div>
 
                                         <!-- Modal Anulación -->
@@ -160,3 +167,29 @@
         </div>
     </div>
 </div>
+<?php foreach ($pagos as $p): ?>
+    <?php if (!empty($p['comprobante_archivo'])): ?>
+    <div class="modal fade" id="comprobantePago<?= (int)$p['id_pago'] ?>" tabindex="-1" aria-labelledby="tituloPago<?= (int)$p['id_pago'] ?>" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h5 id="tituloPago<?= (int)$p['id_pago'] ?>" class="modal-title">Comprobante del pago #<?= (int)$p['id_pago'] ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body text-center"><img class="img-fluid" loading="lazy" alt="Comprobante bancario" src="<?= htmlspecialchars($baseUrl) ?>/admin/pagos/comprobante?id=<?= (int)$p['id_pago'] ?>"></div>
+        </div></div>
+    </div>
+    <?php endif; ?>
+    <?php if ($p['estado'] === 'PENDIENTE' && !empty($p['es_registro_inicial'])): ?>
+    <div class="modal fade" id="rechazarRegistro<?= (int)$p['id_pago'] ?>" tabindex="-1" aria-labelledby="tituloRechazar<?= (int)$p['id_pago'] ?>" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h5 id="tituloRechazar<?= (int)$p['id_pago'] ?>" class="modal-title">Eliminar registro falso</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body">
+                <p>Se eliminarán permanentemente <strong><?= htmlspecialchars($p['nombre_establecimiento']) ?></strong>, su cuenta, fotos, promociones y pagos pendientes. El propietario perderá el acceso.</p>
+                <form action="<?= htmlspecialchars($baseUrl) ?>/admin/pagos/rechazar-eliminar" method="post">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="id_pago" value="<?= (int)$p['id_pago'] ?>">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Eliminar registro definitivamente</button>
+                </form>
+            </div>
+        </div></div>
+    </div>
+    <?php endif; ?>
+<?php endforeach; ?>

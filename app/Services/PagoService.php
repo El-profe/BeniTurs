@@ -38,11 +38,22 @@ class PagoService {
             throw new RuntimeException('Seleccione la duración del pago antes de confirmarlo.');
         }
 
+        if (!Database::beginTransaction()) throw new RuntimeException('Ya hay una transacción en curso.');
         try {
-            $db->beginTransaction();
 
             $lock = $db->prepare('SELECT id_lugar FROM lugares WHERE id_lugar = ? FOR UPDATE');
             $lock->execute([$pago['id_lugar']]);
+            if (!$lock->fetchColumn()) throw new RuntimeException('El negocio ya no existe.');
+            $admin = $db->prepare('SELECT id_administrador FROM administradores WHERE id_administrador = ? AND activo = 1');
+            $admin->execute([$idAdmin]);
+            if (!$admin->fetchColumn()) throw new RuntimeException('Administrador no autorizado.');
+            $actual = $db->prepare('SELECT * FROM pagos WHERE id_pago = ? FOR UPDATE');
+            $actual->execute([$idPago]);
+            $pago = $actual->fetch();
+            if (!$pago || $pago['estado'] !== 'PENDIENTE') throw new RuntimeException('El pago ya fue procesado.');
+            if (!empty($pago['es_registro_inicial'])) {
+                ComprobanteService::validarImagen(ComprobanteService::ruta($pago['comprobante_archivo'] ?? ''));
+            }
 
             // 1. Actualizar estado del pago a CONFIRMADO
             $sqlUpdatePago = "UPDATE pagos SET 
@@ -64,7 +75,7 @@ class PagoService {
             // 2. Calcular fechas de cobertura de la mensualidad
             $ultimoVencimiento = $vigenciaModel->obtenerUltimoVencimiento((int)$pago['id_lugar']);
             $periodo = VigenciaService::calcularPeriodo(
-                $pago['fecha_pago_declarada'],
+                !empty($pago['es_registro_inicial']) ? date('Y-m-d') : $pago['fecha_pago_declarada'],
                 $ultimoVencimiento,
                 $mesesDuracion
             );

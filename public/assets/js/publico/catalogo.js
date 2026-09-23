@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const menu = document.getElementById('navbarMain');
+    menu?.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (!menu.classList.contains('show') || !window.bootstrap?.Collapse) return;
+            const destination = new URL(link.href);
+            if (destination.pathname === location.pathname && destination.search === location.search && destination.hash) {
+                menu.addEventListener('hidden.bs.collapse', () => {
+                    document.getElementById(destination.hash.slice(1))?.scrollIntoView({ block: 'start' });
+                }, { once: true });
+            }
+            window.bootstrap.Collapse.getOrCreateInstance(menu).hide();
+        });
+    });
     const inputBuscar = document.getElementById('inputBuscarHero');
     const chips = document.querySelectorAll('.chip-filter');
     const contenedor = document.getElementById('contenedorLugares');
@@ -7,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!contenedor) return;
 
-    let categoriaSeleccionada = '';
+    let categoriaSeleccionada = document.querySelector('.chip-filter.active')?.getAttribute('data-categoria') || '';
     let debounceTimer = null;
 
     const filtrarLugares = async () => {
@@ -52,6 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
             filtrarLugares();
         });
     }
+
+    document.querySelector('[data-catalogo-todos]')?.addEventListener('click', () => {
+        if (!location.search) btnLimpiar?.click();
+    });
 
     function renderizarCuadricula(lugares) {
         contenedor.innerHTML = '';

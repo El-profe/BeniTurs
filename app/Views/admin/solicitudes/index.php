@@ -1,178 +1,96 @@
+<?php $escape = static fn($valor) => htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8'); ?>
 <div class="container-fluid p-0">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div>
-            <h3 class="fw-bold text-dark mb-1">Bandeja de Solicitudes Comerciales</h3>
-            <p class="text-muted small mb-0">Revisión de solicitudes de negocios interesados en el directorio</p>
-        </div>
-        <!-- Filtros Rápidos por Estado -->
-        <div class="btn-group rounded-pill shadow-sm" role="group">
-            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes" class="btn btn-sm <?= empty($filtroActual) ? 'btn-success fw-bold' : 'btn-light border' ?>">Todas</a>
-            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes?estado=PENDIENTE" class="btn btn-sm <?= $filtroActual === 'PENDIENTE' ? 'btn-warning text-dark fw-bold' : 'btn-light border' ?>">Pendientes</a>
-            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes?estado=ACEPTADA" class="btn btn-sm <?= $filtroActual === 'ACEPTADA' ? 'btn-success fw-bold' : 'btn-light border' ?>">Aceptadas</a>
-            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes?estado=RECHAZADA" class="btn btn-sm <?= $filtroActual === 'RECHAZADA' ? 'btn-danger fw-bold' : 'btn-light border' ?>">Rechazadas</a>
-        </div>
+    <h3>Bandeja de solicitudes comerciales</h3>
+    <p class="text-muted">Revisa el comprobante antes de activar el negocio, su cuenta y la vigencia.</p>
+    <div class="btn-group mb-3" role="group" aria-label="Filtrar solicitudes">
+        <?php foreach ([''=>'Todas','PENDIENTE'=>'Pendientes','ACEPTADA'=>'Aceptadas','RECHAZADA'=>'Rechazadas'] as $estado=>$etiqueta): ?>
+            <a class="btn btn-sm <?= $filtroActual === $estado ? 'btn-success' : 'btn-outline-secondary' ?>" href="<?= $escape($baseUrl) ?>/admin/solicitudes?estado=<?= $estado ?>"><?= $etiqueta ?></a>
+        <?php endforeach; ?>
     </div>
-
-    <?php if (!empty($mensaje)): ?>
-        <div class="alert alert-success alert-dismissible fade show rounded-4 small mb-4 border-0 shadow-sm">
-            <i class="bi bi-check-circle-fill me-2 fs-5"></i> <?= htmlspecialchars($mensaje) ?>
-            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (!empty($error)): ?>
-        <div class="alert alert-danger alert-dismissible fade show rounded-4 small mb-4 border-0 shadow-sm">
-            <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i> <?= htmlspecialchars($error) ?>
-            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-
-    <div class="admin-card overflow-hidden">
-        <div class="table-responsive">
-            <table class="table admin-table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">ID</th>
-                        <th>Establecimiento</th>
-                        <th>Categoría</th>
-                        <th>Solicitante & Contacto</th>
-                        <th>Fecha Envío</th>
-                        <th>Estado</th>
-                        <th class="text-end" style="width: 170px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($solicitudes)): ?>
-                        <?php foreach ($solicitudes as $s): ?>
-                            <tr>
-                                <td class="text-muted fw-bold small">#<?= $s['id_solicitud'] ?></td>
-                                <!-- En la columna de Establecimiento / Plan dentro de index.php -->
-<td>
-    <div class="d-flex align-items-center gap-2">
-        <strong class="text-dark"><?= htmlspecialchars($s['nombre_establecimiento']) ?></strong>
-        <?php if (($s['plan_solicitado'] ?? '') === 'ANUAL'): ?>
-            <span class="badge bg-warning text-dark rounded-pill fw-bold" style="font-size: 0.65rem;">
-                <i class="bi bi-stars"></i> Plan Anual (Bs 2,500)
-            </span>
-        <?php else: ?>
-            <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.65rem;">
-                Plan Mensual (Bs 250)
-            </span>
-        <?php endif; ?>
-    </div>
-    <small class="text-muted d-block text-truncate" style="max-width: 250px;">
-        <i class="bi bi-geo-alt"></i> <?= htmlspecialchars($s['direccion']) ?>
-    </small>
-</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1">
-                                        <?= htmlspecialchars($s['categoria']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold small text-dark"><?= htmlspecialchars($s['nombre_solicitante']) ?></div>
-                                    <small class="text-muted d-block">
-                                        <i class="bi bi-whatsapp text-success me-1"></i><?= htmlspecialchars($s['telefono_contacto']) ?>
-                                    </small>
-                                </td>
-                                <td class="text-muted small">
-                                    <?= date('d/m/Y H:i', strtotime($s['created_at'])) ?>
-                                </td>
-                                <td>
-                                    <?php if ($s['estado'] === 'PENDIENTE'): ?>
-                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1">Pendiente</span>
-                                    <?php elseif ($s['estado'] === 'ACEPTADA'): ?>
-                                        <span class="badge bg-success rounded-pill px-3 py-1">Aceptada</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-danger rounded-pill px-3 py-1">Rechazada</span>
-                                    <?php endif; ?>
-
-                                    <?php if (!empty($s['id_lugar_creado'])): ?>
-                                        <span class="badge bg-info-subtle text-info-emphasis rounded-pill d-block mt-1" style="font-size: 0.65rem;">
-                                            Convertida a Ficha #<?= $s['id_lugar_creado'] ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-end">
-                                    <div class="d-inline-flex gap-1">
-                                        <!-- Botón Ver Detalles (Modal) -->
-                                        <button type="button" class="btn btn-light btn-sm border rounded-circle" 
-                                                data-bs-toggle="modal" data-bs-target="#modalDetalle<?= $s['id_solicitud'] ?>" 
-                                                title="Ver detalle completo" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-
-                                        <!-- Botón Convertir en Ficha (Solo si está ACEPTADA y no convertida) -->
-                                        <?php if ($s['estado'] === 'ACEPTADA' && empty($s['id_lugar_creado'])): ?>
-                                            <form action="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes/convertir" method="POST" class="d-inline m-0">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                <input type="hidden" name="id_solicitud" value="<?= $s['id_solicitud'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-2 fw-semibold" title="Crear ficha comercial sin duplicar" style="font-size: 0.75rem;">
-                                                    <i class="bi bi-arrow-right-circle me-1"></i> Ficha
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Modal de Detalle y Resolución -->
-                            <div class="modal fade" id="modalDetalle<?= $s['id_solicitud'] ?>" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 rounded-4 shadow">
-                                        <div class="modal-header bg-light border-0 py-3">
-                                            <h5 class="modal-title fw-bold text-dark">Solicitud #<?= $s['id_solicitud'] ?></h5>
-                                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <h6 class="fw-bold text-success mb-1"><?= htmlspecialchars($s['nombre_establecimiento']) ?></h6>
-                                            <p class="text-muted extra-small mb-3">Categoría: <?= htmlspecialchars($s['categoria']) ?></p>
-
-                                            <p class="small text-secondary mb-3" style="white-space: pre-line;"><?= htmlspecialchars($s['descripcion']) ?></p>
-
-                                            <div class="p-3 bg-light rounded-3 small mb-3">
-                                                <div class="mb-1"><strong>Dirección:</strong> <?= htmlspecialchars($s['direccion']) ?></div>
-                                                <div class="mb-1"><strong>Horarios:</strong> <?= htmlspecialchars($s['horarios'] ?: 'No especificado') ?></div>
-                                                <div class="mb-1"><strong>Contacto:</strong> <?= htmlspecialchars($s['nombre_solicitante']) ?></div>
-                                                <div><strong>Teléfono:</strong> <?= htmlspecialchars($s['telefono_contacto']) ?></div>
-                                            </div>
-
-                                            <form action="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes/resolver" method="POST">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                <input type="hidden" name="id_solicitud" value="<?= $s['id_solicitud'] ?>">
-
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small">Decisión Administrativa:</label>
-                                                    <select name="estado" class="form-select form-select-sm">
-                                                        <option value="ACEPTADA" <?= $s['estado'] === 'ACEPTADA' ? 'selected' : '' ?>>Aceptar Solicitud</option>
-                                                        <option value="RECHAZADA" <?= $s['estado'] === 'RECHAZADA' ? 'selected' : '' ?>>Rechazar Solicitud</option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small">Observaciones Internas:</label>
-                                                    <textarea name="observaciones_admin" rows="2" class="form-control form-control-sm" placeholder="Anotaciones de verificación..."><?= htmlspecialchars($s['observaciones_admin'] ?? '') ?></textarea>
-                                                </div>
-
-                                                <button type="submit" class="btn btn-dark w-100 rounded-pill btn-sm fw-bold">
-                                                    Guardar Resolución
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox display-6 d-block mb-2"></i>
-                                No hay solicitudes registradas con el filtro seleccionado.
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+    <?php if ($mensaje): ?><div class="alert alert-success" role="status"><?= $escape($mensaje) ?></div><?php endif; ?>
+    <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= $escape($error) ?></div><?php endif; ?>
+    <div class="table-responsive admin-card">
+        <table class="table align-middle">
+            <thead><tr><th>ID</th><th>Establecimiento / Plan</th><th>Rubro</th><th>Contacto</th><th>Comprobante</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+            <?php foreach ($solicitudes as $s): ?>
+                <tr>
+                    <td>#<?= (int)$s['id_solicitud'] ?></td>
+                    <td><strong><?= $escape($s['nombre_establecimiento']) ?></strong><br>
+                        <small><?= $s['plan_solicitado'] === 'ANUAL' ? 'Anual · Bs 2.500' : 'Mensual · Bs 250' ?></small><br>
+                        <small class="text-muted"><?= $escape($s['created_at']) ?></small></td>
+                    <td><?= $escape($s['categoria']) ?></td>
+                    <td><?= $escape($s['nombre_solicitante']) ?><br><?= $escape($s['telefono_contacto']) ?></td>
+                    <td>
+                        <?php if ($s['comprobante_archivo']): ?>
+                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#comprobante<?= (int)$s['id_solicitud'] ?>">Ver comprobante</button>
+                            <small class="d-block"><?= $escape($s['numero_comprobante']) ?></small>
+                        <?php else: ?><span class="text-muted">Sin comprobante</span><?php endif; ?>
+                    </td>
+                    <td><?= $escape($s['estado']) ?>
+                        <?php if ($s['id_lugar_creado']): ?><small class="d-block">Ficha #<?= (int)$s['id_lugar_creado'] ?></small><?php endif; ?>
+                    </td>
+                    <td>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#detalle<?= (int)$s['id_solicitud'] ?>">Detalles</button>
+                        <?php if ($s['estado'] === 'PENDIENTE' && $s['comprobante_archivo'] && $s['usuario_solicitado'] && $s['password_hash_solicitado']): ?>
+                            <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/aprovisionar" method="post" class="mt-2 form-aprovisionar">
+                                <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
+                                <input type="hidden" name="id_solicitud" value="<?= (int)$s['id_solicitud'] ?>">
+                                <button class="btn btn-success btn-sm" type="submit">Verificar y Aprovisionar Todo</button>
+                            </form>
+                        <?php elseif ($s['estado'] === 'PENDIENTE'): ?>
+                            <small class="d-block text-muted">Solicitud incompleta: requiere comprobante y credenciales.</small>
+                        <?php endif; ?>
+                        <?php if ($s['estado'] === 'ACEPTADA' && $s['id_cuenta_creada'] && $s['usuario_solicitado']): ?>
+                            <?php $whatsapp = \App\Services\SolicitudService::enlaceBienvenida($s); ?>
+                            <?php if ($whatsapp): ?><a href="<?= $escape($whatsapp) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm mt-2">Enviar bienvenida por WhatsApp</a><?php endif; ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (!$solicitudes): ?><tr><td colspan="7" class="text-center py-4">No hay solicitudes con este filtro.</td></tr><?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
+<?php foreach ($solicitudes as $s): ?>
+    <?php if ($s['comprobante_archivo']): ?>
+    <div class="modal fade" id="comprobante<?= (int)$s['id_solicitud'] ?>" tabindex="-1" aria-labelledby="tituloComprobante<?= (int)$s['id_solicitud'] ?>" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h5 id="tituloComprobante<?= (int)$s['id_solicitud'] ?>" class="modal-title">Comprobante #<?= (int)$s['id_solicitud'] ?></h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body text-center"><img loading="lazy" class="img-fluid" alt="Comprobante bancario de la solicitud" src="<?= $escape($baseUrl) ?>/admin/solicitudes/comprobante?id=<?= (int)$s['id_solicitud'] ?>"></div>
+        </div></div>
+    </div>
+    <?php endif; ?>
+    <div class="modal fade" id="detalle<?= (int)$s['id_solicitud'] ?>" tabindex="-1" aria-labelledby="tituloDetalle<?= (int)$s['id_solicitud'] ?>" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h5 id="tituloDetalle<?= (int)$s['id_solicitud'] ?>" class="modal-title"><?= $escape($s['nombre_establecimiento']) ?></h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body">
+                <p style="white-space: pre-line"><?= $escape($s['descripcion']) ?></p>
+                <p><strong>Dirección:</strong> <?= $escape($s['direccion']) ?><br>
+                    <strong>Horarios:</strong> <?= $escape($s['horarios']) ?><br>
+                    <strong>Correo:</strong> <?= $escape($s['email_contacto']) ?><br>
+                    <strong>Usuario solicitado:</strong> <?= $escape($s['usuario_solicitado']) ?></p>
+                <?php if ($s['estado'] === 'PENDIENTE'): ?>
+                <form action="<?= $escape($baseUrl) ?>/admin/solicitudes/resolver" method="post">
+                    <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
+                    <input type="hidden" name="id_solicitud" value="<?= (int)$s['id_solicitud'] ?>">
+                    <input type="hidden" name="estado" value="RECHAZADA">
+                    <label class="form-label" for="motivo<?= (int)$s['id_solicitud'] ?>">Observaciones</label>
+                    <textarea id="motivo<?= (int)$s['id_solicitud'] ?>" name="observaciones_admin" class="form-control mb-2" maxlength="2000"></textarea>
+                    <button class="btn btn-outline-danger" type="submit">Rechazar solicitud</button>
+                </form>
+                <?php else: ?><p><?= $escape($s['observaciones_admin']) ?></p><?php endif; ?>
+            </div>
+        </div></div>
+    </div>
+<?php endforeach; ?>
+<script>
+document.querySelectorAll('.form-aprovisionar').forEach(form => {
+    form.addEventListener('submit', () => {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = 'Aprovisionando…';
+    });
+});
+</script>

@@ -15,11 +15,12 @@ class Solicitud {
         $sql = "INSERT INTO solicitudes (
                     nombre_establecimiento, id_categoria, plan_solicitado, nombre_solicitante, 
                     telefono_contacto, email_contacto, direccion, descripcion, 
-                    horarios, estado
+                    horarios, usuario_solicitado, password_hash_solicitado,
+                    comprobante_archivo, numero_comprobante, estado
                 ) VALUES (
                     :nombre_establecimiento, :id_categoria, :plan_solicitado, :nombre_solicitante,
                     :telefono_contacto, :email_contacto, :direccion, :descripcion,
-                    :horarios, 'PENDIENTE'
+                    :horarios, :usuario, :hash, :archivo, :comprobante, 'PENDIENTE'
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -32,7 +33,11 @@ class Solicitud {
             ':email_contacto'        => $datos['email_contacto'] ?? null,
             ':direccion'             => $datos['direccion'],
             ':descripcion'           => $datos['descripcion'],
-            ':horarios'              => $datos['horarios'] ?? null
+            ':horarios'              => $datos['horarios'] ?? null,
+            ':usuario'               => $datos['usuario_solicitado'],
+            ':hash'                  => $datos['password_hash_solicitado'],
+            ':archivo'               => $datos['comprobante_archivo'],
+            ':comprobante'           => $datos['numero_comprobante'] ?? null
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -40,10 +45,12 @@ class Solicitud {
 
     public function listar(?string $estado = null): array {
         $sql = "SELECT s.*, c.nombre AS categoria, c.icono AS categoria_icono,
-                       l.id_lugar AS id_lugar_creado, l.slug AS slug_lugar_creado
+                       l.id_lugar AS id_lugar_creado, l.slug AS slug_lugar_creado,
+                       cn.id_cuenta AS id_cuenta_creada
                 FROM solicitudes s
                 INNER JOIN categorias c ON s.id_categoria = c.id_categoria
-                LEFT JOIN lugares l ON l.id_solicitud_origen = s.id_solicitud";
+                LEFT JOIN lugares l ON l.id_solicitud_origen = s.id_solicitud
+                LEFT JOIN cuentas_negocio cn ON cn.id_lugar = l.id_lugar";
 
         $params = [];
         if (!empty($estado) && in_array($estado, ['PENDIENTE', 'ACEPTADA', 'RECHAZADA'])) {

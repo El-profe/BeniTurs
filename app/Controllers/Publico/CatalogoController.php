@@ -5,6 +5,7 @@ use App\Core\Controller;
 use App\Models\Lugar;
 use App\Models\Categoria;
 use App\Models\Promocion;
+use App\Services\MapaService;
 
 class CatalogoController extends Controller {
     private Lugar $lugarModel;
@@ -18,12 +19,21 @@ class CatalogoController extends Controller {
 
     public function index(): void {
         $categorias = $this->categoriaModel->listarTodasActivas();
-        $lugares = $this->lugarModel->listarPublicos();
+        $categoriaSeleccionada = null;
+        $slugCategoria = is_string($_GET['categoria'] ?? null) ? $_GET['categoria'] : '';
+        foreach ($categorias as $categoria) {
+            if ($categoria['slug'] === $slugCategoria) {
+                $categoriaSeleccionada = (int)$categoria['id_categoria'];
+                break;
+            }
+        }
+        $lugares = $this->lugarModel->listarPublicos($categoriaSeleccionada);
 
         $this->render('publico/catalogo/index', [
             'titulo'     => 'Guía Turística y Comercial de Trinidad',
             'heroPantallaCompleta' => true,
             'categorias' => $categorias,
+            'categoriaSeleccionada' => $categoriaSeleccionada,
             'lugares'    => $lugares
         ], 'publico');
     }
@@ -50,6 +60,7 @@ class CatalogoController extends Controller {
         $this->render('publico/catalogo/detalle', [
             'titulo' => $lugar['nombre'],
             'lugar'  => $lugar,
+            'mapa' => MapaService::desdeCoordenadas($lugar['coordenadas_gps'] ?? null),
             'promociones' => $promociones
         ], 'publico');
     }

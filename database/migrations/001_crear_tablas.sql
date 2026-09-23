@@ -202,3 +202,17 @@ CREATE TABLE IF NOT EXISTS promociones (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_promos_lugar FOREIGN KEY (id_lugar) REFERENCES lugares(id_lugar) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- MariaDB. Seleccionar la base existente; no elimina registros.
+ALTER TABLE solicitudes
+    ADD COLUMN IF NOT EXISTS plan_solicitado ENUM('MENSUAL','ANUAL') NOT NULL DEFAULT 'MENSUAL',
+    ADD COLUMN IF NOT EXISTS comprobante_archivo VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS numero_comprobante VARCHAR(100) NULL,
+    ADD COLUMN IF NOT EXISTS usuario_solicitado VARCHAR(60) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS password_hash_solicitado VARCHAR(255) NOT NULL DEFAULT '';
+-- Los vacios identifican solicitudes historicas sin credenciales; no se aprovisionan.
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS comprobante_archivo VARCHAR(255) NULL;
+CREATE INDEX IF NOT EXISTS idx_solicitudes_purga ON solicitudes (estado, created_at);
+
+-- Distingue registros iniciales del autoservicio de pagos historicos/renovaciones.
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS es_registro_inicial TINYINT(1) NOT NULL DEFAULT 0;

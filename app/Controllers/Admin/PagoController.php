@@ -16,6 +16,9 @@ class PagoController extends Controller {
     public function __construct() {
         parent::__construct();
         AuthMiddleware::autenticar();
+        $admin = Database::getConnection()->prepare('SELECT id_administrador FROM administradores WHERE id_administrador = ? AND activo = 1');
+        $admin->execute([(int)$_SESSION['admin_id']]);
+        if (!$admin->fetchColumn()) { http_response_code(403); exit('Acceso no autorizado.'); }
         $this->pagoModel   = new Pago();
         $this->tarifaModel = new Tarifa();
     }
@@ -122,7 +125,8 @@ class PagoController extends Controller {
     }
 
     public function confirmar(): void {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !CsrfMiddleware::validarToken($_POST['csrf_token'] ?? '')) {
+        $token = $_POST['csrf_token'] ?? null;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($token) || !CsrfMiddleware::validarToken($token)) {
             $_SESSION['admin_error'] = 'Token inválido.';
             header("Location: {$this->config['base_url']}/admin/pagos");
             exit();
@@ -139,6 +143,44 @@ class PagoController extends Controller {
         }
 
         header("Location: {$this->config['base_url']}/admin/pagos");
+        exit();
+    }
+
+    public function comprobante(): void {
+        $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+        $pago = $id ? $this->pagoModel->buscarPorId($id) : null;
+        try {
+            if (!$pago || empty($pago['comprobante_archivo'])) throw new \RuntimeException('No disponible.');
+            $ruta = \App\Services\ComprobanteService::ruta($pago['comprobante_archivo']);
+            $mime = \App\Services\ComprobanteService::validarImagen($ruta);
+        } catch (\Throwable $e) { http_response_code(404); exit('Comprobante no disponible.'); }
+        header('Content-Type: '.$mime);
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, no-store');
+        header("Content-Security-Policy: default-src 'none'; sandbox");
+        header('Content-Length: '.filesize($ruta));
+        readfile($ruta);
+        exit();
+    }
+
+    public function rechazarEliminar(): void {
+        $token = $_POST['csrf_token'] ?? null;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($token) || !CsrfMiddleware::validarToken($token)) {
+            http_response_code(403); exit('Token de seguridad inválido.');
+        }
+        $id = filter_var($_POST['id_pago'] ?? null, FILTER_VALIDATE_INT);
+        try {
+            if (!$id || $id < 1) throw new \InvalidArgumentException('Pago inválido.');
+            $res = \App\Services\RechazoNegocioService::eliminarRegistro($id, (int)$_SESSION['admin_id']);
+            $_SESSION['admin_flash'] = 'Registro falso eliminado: ficha, cuenta, fotos, promociones y pagos pendientes.';
+            if ($res['fallos_archivos']) $_SESSION['admin_error'] = 'Algunos archivos no pudieron retirarse del disco. Revise los permisos y el registro de errores.';
+        } catch (\PDOException $e) {
+            error_log('Error al rechazar negocio: '.$e->getMessage());
+            $_SESSION['admin_error'] = 'No se pudo eliminar el registro. No se guardaron cambios.';
+        } catch (\RuntimeException | \InvalidArgumentException $e) {
+            $_SESSION['admin_error'] = $e->getMessage();
+        }
+        header("Location: {$this->config['base_url']}/admin/pagos?estado=PENDIENTE");
         exit();
     }
 

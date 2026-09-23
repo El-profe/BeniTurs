@@ -33,12 +33,18 @@ class PanelController extends Controller {
         $stmtFotos = $db->prepare("SELECT COUNT(*) FROM fotografias WHERE id_lugar = :id");
         $stmtFotos->execute([':id' => $this->idLugar]);
         $totalFotos = (int)$stmtFotos->fetchColumn();
+        $pendiente = $db->prepare("SELECT COUNT(*) FROM pagos WHERE id_lugar = ? AND estado = 'PENDIENTE'");
+        $pendiente->execute([$this->idLugar]);
+        $vencimiento = (new \App\Models\Vigencia())->obtenerUltimoVencimiento($this->idLugar);
 
         $this->render('negocio/dashboard', [
             'titulo'      => 'Panel de Control - ' . $lugar['nombre'],
             'lugar'       => $lugar,
             'promociones' => $promociones,
-            'totalFotos'  => $totalFotos
+            'totalFotos'  => $totalFotos,
+            'pagoPendiente' => (bool)$pendiente->fetchColumn(),
+            'esVisible' => \App\Services\PublicacionService::esFichaVisible($this->idLugar),
+            'fechaVencimiento' => $vencimiento
         ], 'negocio');
     }
 
@@ -64,6 +70,47 @@ class PanelController extends Controller {
         ], 'negocio');
     }
 
+    public function ubicacion(): void {
+        $lugar = $this->lugarModel->buscarPorId($this->idLugar);
+        $datosUbicacion = $_SESSION['negocio_ubicacion_datos'] ?? $lugar;
+        $mensaje = $_SESSION['negocio_flash'] ?? null;
+        $error = $_SESSION['negocio_error'] ?? null;
+        unset($_SESSION['negocio_flash'], $_SESSION['negocio_error'], $_SESSION['negocio_ubicacion_datos']);
+        $this->render('negocio/ubicacion', [
+            'titulo' => 'Ubicación de mi local',
+            'lugar' => $lugar,
+            'datosUbicacion' => $datosUbicacion,
+            'mensaje' => $mensaje,
+            'error' => $error,
+            'mapaEditable' => true,
+            'csrfToken' => CsrfMiddleware::obtenerToken(),
+        ], 'negocio');
+    }
+
+    public function guardarUbicacion(): void {
+        if (!CsrfMiddleware::validarToken(is_string($_POST['csrf_token'] ?? null) ? $_POST['csrf_token'] : '')) {
+            $_SESSION['negocio_error'] = 'Tu sesión venció. Intenta guardar nuevamente.';
+        } else {
+            try {
+                \App\Services\UbicacionNegocioService::guardar((int)$_SESSION['negocio_id'], $this->idLugar, $_POST);
+                unset($_SESSION['negocio_ubicacion_datos']);
+                $_SESSION['negocio_flash'] = 'Ubicación guardada. Este punto aparecerá en el mapa cuando tu ficha esté visible.';
+            } catch (\InvalidArgumentException $e) {
+                $_SESSION['negocio_error'] = $e->getMessage();
+            } catch (\Throwable $e) {
+                error_log('Error al guardar ubicación del negocio: ' . $e->getMessage());
+                $_SESSION['negocio_error'] = 'No pudimos guardar la ubicación. Intenta nuevamente.';
+            }
+        }
+        if (!empty($_SESSION['negocio_error'])) {
+            foreach (['direccion', 'referencia_ubicacion', 'coordenadas_gps'] as $campo) {
+                $_SESSION['negocio_ubicacion_datos'][$campo] = is_string($_POST[$campo] ?? null) ? $_POST[$campo] : '';
+            }
+        }
+        header("Location: {$this->config['base_url']}/negocio/ubicacion");
+        exit();
+    }
+
     public function subirFoto(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !CsrfMiddleware::validarToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['negocio_error'] = 'Token de seguridad inválido.';
@@ -71,7 +118,13 @@ class PanelController extends Controller {
             exit();
         }
 
+        $db = Database::getConnection();
+        $archivo = null;
+        $db->beginTransaction();
         try {
+            $lock = $db->prepare('SELECT id_lugar FROM lugares WHERE id_lugar = ? FOR UPDATE');
+            $lock->execute([$this->idLugar]);
+            if (!$lock->fetchColumn()) throw new \RuntimeException('El negocio ya no está disponible.');
             if (empty($_FILES['fotografia']['tmp_name'])) {
                 throw new \RuntimeException('Por favor seleccione una imagen.');
             }
@@ -80,9 +133,12 @@ class PanelController extends Controller {
             if ($archivo) {
                 $esPrincipal = isset($_POST['es_principal']) ? 1 : 0;
                 $this->fotografiaModel->registrar($this->idLugar, $archivo, $esPrincipal);
-                $_SESSION['negocio_flash'] = 'Fotografía subida y publicada correctamente.';
+                $_SESSION['negocio_flash'] = 'Fotografía guardada en tu galería. Su visibilidad depende de la activación de tu ficha.';
             }
-        } catch (\Exception $e) {
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            if ($archivo) ImagenService::eliminarArchivo($archivo['nombre_archivo']);
             $_SESSION['negocio_error'] = $e->getMessage();
         }
 
@@ -163,7 +219,7 @@ class PanelController extends Controller {
             'fecha_fin'       => $fin
         ]);
 
-        $_SESSION['negocio_flash'] = '¡Promoción publicada con éxito en el catálogo!';
+        $_SESSION['negocio_flash'] = 'Promoción guardada. Se mostrará en sus fechas cuando tu ficha esté activa.';
         header("Location: {$this->config['base_url']}/negocio/promociones");
         exit();
     }

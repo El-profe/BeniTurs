@@ -1,10 +1,19 @@
 <div class="container-fluid p-0">
-    <div class="admin-welcome-banner p-4 text-white mb-4 shadow-sm">
-        <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill mb-2">Panel del Comercio</span>
-        <h3 class="fw-bold mb-1"><?= htmlspecialchars($lugar['nombre']) ?></h3>
-        <p class="text-white-50 mb-0 small">Controla la presencia de tu marca, mantén tus fotos al día y lanza ofertas para atraer visitantes.</p>
+    <div class="business-welcome mb-4">
+        <div class="business-welcome-copy">
+            <span class="business-welcome-label"><i class="bi bi-shop" aria-hidden="true"></i> Panel del Comercio</span>
+            <h1><?= htmlspecialchars($lugar['nombre']) ?></h1>
+            <p>Controla la presencia de tu marca, mantén tus fotos al día y lanza ofertas para atraer visitantes.</p>
+        </div>
+        <div class="business-welcome-icon" aria-hidden="true"><i class="bi bi-shop-window"></i></div>
     </div>
 
+    <?php if ($pagoPendiente): ?>
+        <div class="alert alert-warning rounded-4 p-4" role="status">
+            <h5><i class="bi bi-hourglass-split me-2"></i>Estamos verificando tu pago</h5>
+            Tu comprobante de pago está siendo verificado. Mientras tanto, puedes subir las fotos de tu galería y redactar tus promociones.
+        </div>
+    <?php endif; ?>
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-xl-4">
             <div class="admin-card p-4 h-100">
@@ -40,9 +49,17 @@
             <div class="admin-card p-4 h-100">
                 <span class="text-muted small fw-semibold d-block">Estado de Publicación</span>
                 <div class="d-flex align-items-center gap-2 mt-2">
-                    <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-check-circle me-1"></i> Ficha Habilitada</span>
+                    <?php if ($esVisible): ?>
+                        <span class="badge bg-success rounded-pill px-3 py-2 text-wrap">Ficha Activa y Visible en la Guía</span>
+                    <?php else: ?>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2">Ficha no visible al público</span>
+                    <?php endif; ?>
                 </div>
-                <small class="text-muted d-block mt-2">Visible para todos los turistas en Trinidad.</small>
+                <?php if ($esVisible && $fechaVencimiento): ?>
+                    <small class="text-muted d-block mt-2">Vigencia hasta <?= htmlspecialchars(date('d/m/Y', strtotime($fechaVencimiento))) ?>.</small>
+                <?php elseif (!$esVisible): ?>
+                    <small class="text-muted d-block mt-2">Puedes preparar tu contenido. La publicación requiere pago confirmado, vigencia activa y habilitación administrativa.</small>
+                <?php endif; ?>
             </div>
         </div>
     </div>

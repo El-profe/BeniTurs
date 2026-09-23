@@ -55,21 +55,28 @@
                 </li>
             </ul>
 
-            <div class="sidebar-label">Módulos Siguientes</div>
+                        <div class="sidebar-label">Comercial & Finanzas</div>
             <ul class="nav-admin mb-3">
                 <li>
-                    <a href="#" class="nav-admin-link text-white-50 opacity-50">
+                    <a href="<?= htmlspecialchars($baseUrl) ?>/admin/solicitudes" class="nav-admin-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'solicitudes')) ? 'active' : '' ?>">
                         <i class="bi bi-inbox-fill"></i>
-                        <span>Solicitudes <span class="badge bg-warning text-dark ms-auto" style="font-size: 0.65rem;">Mód 5</span></span>
+                        <span>Solicitudes</span>
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-admin-link text-white-50 opacity-50">
+                    <a href="<?= htmlspecialchars($baseUrl) ?>/admin/pagos" class="nav-admin-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'pagos')) ? 'active' : '' ?>">
                         <i class="bi bi-cash-stack"></i>
-                        <span>Pagos & Vigencias <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;">Mód 6</span></span>
+                        <span>Pagos & Vigencias</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= htmlspecialchars($baseUrl) ?>/admin/reportes" class="nav-admin-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'reportes')) ? 'active' : '' ?>">
+                        <i class="bi bi-bar-chart-line-fill"></i>
+                        <span>Reportes Analíticos</span>
                     </a>
                 </li>
             </ul>
+
         </div>
 
         <div class="sidebar-footer">
@@ -152,10 +159,15 @@
                 <i class="bi bi-inbox-fill"></i>
                     <span>Solicitudes</span>
             </a>
-           <a href="<?= htmlspecialchars($baseUrl) ?>/admin/pagos" class="admin-top-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'pagos')) ? 'active' : '' ?>">
+                      <a href="<?= htmlspecialchars($baseUrl) ?>/admin/pagos" class="admin-top-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'pagos')) ? 'active' : '' ?>">
                 <i class="bi bi-cash-stack"></i>
-                    <span>Pagos & Vigencias</span>
+                    <span>Pagos</span>
             </a>
+            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/reportes" class="admin-top-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'reportes')) ? 'active' : '' ?>">
+                <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Reportes</span>
+            </a>
+
         </nav>
     </header>
 

@@ -51,11 +51,11 @@
 
     <!-- Píldoras de Categoría (Chips) -->
     <div class="d-flex flex-wrap gap-2 mb-4 category-chips-container pb-2">
-        <button class="chip-filter active" data-categoria="" aria-label="Todos" title="Todos">
+        <button class="chip-filter<?= $categoriaSeleccionada === null ? ' active' : '' ?>" data-categoria="" aria-label="Todos" title="Todos">
             <i class="bi bi-grid-fill" aria-hidden="true"></i>
         </button>
         <?php foreach ($categorias as $c): ?>
-            <button class="chip-filter" data-categoria="<?= $c['id_categoria'] ?>" aria-label="<?= htmlspecialchars($c['nombre']) ?>" title="<?= htmlspecialchars($c['nombre']) ?>">
+            <button class="chip-filter<?= $categoriaSeleccionada === (int)$c['id_categoria'] ? ' active' : '' ?>" data-categoria="<?= $c['id_categoria'] ?>" aria-label="<?= htmlspecialchars($c['nombre']) ?>" title="<?= htmlspecialchars($c['nombre']) ?>">
                 <i class="bi <?= htmlspecialchars($c['icono']) ?>" aria-hidden="true"></i>
             </button>
         <?php endforeach; ?>
@@ -137,7 +137,7 @@
         <?php else: ?>
             <div class="col-12 text-center py-5">
                 <i class="bi bi-info-circle display-4 text-muted mb-3 d-block"></i>
-                <h5 class="text-muted">No existen lugares publicados disponibles en este momento.</h5>
+                <h5 class="text-muted"><?= $categoriaSeleccionada !== null ? 'Todavía no hay lugares publicados en esta categoría.' : 'No existen lugares publicados disponibles en este momento.' ?></h5>
             </div>
         <?php endif; ?>
     </div>
@@ -158,7 +158,7 @@
 
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="card h-100 border-0 bg-light rounded-4 p-4 text-center guide-card guide-card-transport">
+                <div class="card h-100 border-0 bg-light rounded-4 p-4 text-center guide-card guide-card-transport" id="transporte">
                     <div class="icon-circle bg-warning-subtle text-warning mx-auto mb-3">
                         <i class="bi bi-scooter fs-2"></i>
                     </div>

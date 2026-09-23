@@ -28,9 +28,16 @@ class ImagenController extends Controller {
 
         // Comprobación de seguridad: Permitir si es Admin logueado O si la ficha es visible
         $esAdmin = !empty($_SESSION['admin_id']);
+        if ($esAdmin) {
+            $admin = \App\Core\Database::getConnection()->prepare('SELECT id_administrador FROM administradores WHERE id_administrador = ? AND activo = 1');
+            $admin->execute([(int)$_SESSION['admin_id']]);
+            $esAdmin = (bool)$admin->fetchColumn();
+        }
         $esVisible = PublicacionService::esFichaVisible((int)$foto['id_lugar']);
+        $esPropietario = (int)($_SESSION['negocio_lugar_id'] ?? 0) === (int)$foto['id_lugar']
+            && \App\Middleware\NegocioAuthMiddleware::esCuentaActualValida();
 
-        if (!$esAdmin && !$esVisible) {
+        if (!$esAdmin && !$esVisible && !$esPropietario) {
             http_response_code(403);
             exit();
         }
@@ -43,7 +50,8 @@ class ImagenController extends Controller {
 
         header('Content-Type: ' . $foto['mime_type']);
         header('Content-Length: ' . filesize($rutaFisica));
-        header('Cache-Control: public, max-age=86400');
+        header('Cache-Control: private, no-store');
+        header('X-Content-Type-Options: nosniff');
         readfile($rutaFisica);
         exit();
     }

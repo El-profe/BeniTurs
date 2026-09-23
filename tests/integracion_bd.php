@@ -53,6 +53,8 @@ try {
     for ($i = 0; $i < 2; $i++) {
         runSql($db, 'database/migrations/002_completar_esquema.sql');
         runSql($db, 'database/migrations/003_duracion_pagos.sql');
+        runSql($db, 'database/migrations/004_cuarentena_aprovisionamiento.sql');
+        runSql($db, 'database/migrations/005_autoservicio.sql');
     }
     check($before === $db->query('SELECT COUNT(*) FROM pagos')->fetchColumn(), 'Migraciones repetibles conservan pagos');
     $lugares = new Lugar();

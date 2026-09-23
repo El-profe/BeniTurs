@@ -5,13 +5,23 @@ namespace App\Services;
  * Valida formatos, pesos y almacena las imágenes en storage/uploads/lugares/
  */
 class ImagenService {
+    private static ?string $directorio = null;
 
     public static function getDirectorioStorage(): string {
-        $dir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'lugares' . DIRECTORY_SEPARATOR;
+        $dir = self::$directorio ?? dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'lugares' . DIRECTORY_SEPARATOR;
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
         return $dir;
+    }
+
+    public static function eliminarArchivo(string $nombre): bool {
+        if (!preg_match('/\Alugar_[a-f0-9]{16}_[0-9]+\.(jpg|png|webp)\z/D', $nombre)) {
+            throw new \InvalidArgumentException('Nombre de fotografía inválido.');
+        }
+        $ruta = self::getDirectorioStorage() . $nombre;
+        if (is_link($ruta)) throw new \RuntimeException('Archivo no permitido.');
+        return !is_file($ruta) || unlink($ruta);
     }
 
     /**

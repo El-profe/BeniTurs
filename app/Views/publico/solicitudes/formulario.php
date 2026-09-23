@@ -9,13 +9,13 @@
                 </span>
                 <h2 class="display-6 fw-bold text-dark mb-2">Haz que tu Negocio destaque en Trinidad</h2>
                 <p class="text-muted mx-auto" style="max-width: 600px;">
-                    Elige tu plan, selecciona tu categoría con un solo clic y te ayudamos a incorporar tu establecimiento.
+                    Crea tu cuenta y empieza a preparar tu ficha hoy. Tu negocio aparecerá en la guía cuando verifiquemos el pago.
                 </p>
             </div>
 
             <div id="solicitudAlertContainer" aria-live="polite" tabindex="-1"></div>
 
-            <form id="formSolicitudComercial" action="<?= htmlspecialchars($baseUrl) ?>/api/solicitudes/enviar" method="post">
+            <form id="formSolicitudComercial" action="<?= htmlspecialchars($baseUrl) ?>/api/solicitudes/enviar" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <!-- Campo oculto que guarda la categoría elegida por los iconos -->
                 <input type="hidden" name="id_categoria" id="id_categoria_seleccionada" value="" required>
@@ -151,9 +151,32 @@
                     </div>
                 </div>
 
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <h5 class="fw-bold mb-3">4. Acceso a tu portal</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="usuarioSolicitado" class="form-label">Usuario deseado *</label>
+                            <input id="usuarioSolicitado" name="usuario_solicitado" class="form-control" required minlength="3" maxlength="60" pattern="[A-Za-z0-9_.\-]{3,60}" autocomplete="username">
+                            <small class="text-muted">Letras, números, puntos, guiones y guiones bajos. Sujeto a disponibilidad.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="passwordSolicitado" class="form-label">Contraseña *</label>
+                            <input type="password" id="passwordSolicitado" name="password" class="form-control" required minlength="8" maxlength="72" autocomplete="new-password">
+                            <small class="text-muted">Mínimo 8 caracteres; máximo 72 bytes. Podrás ingresar inmediatamente para configurar tu negocio.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <h5 class="fw-bold mb-3">5. Comprobante de pago</h5>
+                    <label for="numeroComprobante" class="form-label">Número de operación o comprobante *</label>
+                    <input id="numeroComprobante" name="numero_comprobante" class="form-control mb-3" maxlength="100" required>
+                    <label for="comprobanteSolicitud" class="form-label">Captura de transferencia bancaria / QR *</label>
+                    <input type="file" id="comprobanteSolicitud" name="comprobante" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+                    <small class="text-muted">JPG, PNG o WEBP, máximo 5 MB. Solo administración puede revisar tu comprobante. Mientras lo verificamos, podrás subir fotos y preparar promociones.</small>
+                </div>
                 <div class="text-end mb-5">
                     <button type="submit" id="btnEnviarSolicitud" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fw-bold text-dark shadow">
-                        <i class="bi bi-send-check-fill me-1"></i> Solicitar Publicación
+                        <i class="bi bi-send-check-fill me-1"></i> Crear mi cuenta y configurar mi negocio
                     </button>
                 </div>
             </form>

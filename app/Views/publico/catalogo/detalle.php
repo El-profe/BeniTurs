@@ -82,11 +82,27 @@
                         <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i> Referencia: <?= htmlspecialchars($lugar['referencia_ubicacion']) ?></p>
                     <?php endif; ?>
 
+                    <?php if (!empty($mapa)): ?>
+                        <div class="place-map rounded-4 overflow-hidden border mt-3 mb-3">
+                            <iframe
+                                src="<?= htmlspecialchars($mapa['url'], ENT_QUOTES, 'UTF-8') ?>"
+                                title="Mapa de ubicación de <?= htmlspecialchars($lugar['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                                width="100%" height="340" loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen></iframe>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-muted small mt-3 mb-2">
+                            <i class="bi bi-pin-map me-1" aria-hidden="true"></i>
+                            La ubicación exacta en el mapa todavía no está disponible.
+                        </p>
+                    <?php endif; ?>
+
                     <!-- Botón Google Maps -->
                     <?php 
                         $queryMaps = urlencode($lugar['nombre'] . ', Trinidad, Beni, Bolivia');
-                        if (!empty($lugar['coordenadas_gps'])) {
-                            $queryMaps = urlencode($lugar['coordenadas_gps']);
+                        if (!empty($mapa)) {
+                            $queryMaps = urlencode($mapa['coordenadas']);
                         }
                     ?>
                     <a href="https://www.google.com/maps/search/?api=1&query=<?= $queryMaps ?>" 
