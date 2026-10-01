@@ -34,8 +34,8 @@ class PagoService {
         }
 
         $mesesDuracion = (int)$pago['meses_duracion'];
-        if (!in_array($mesesDuracion, [1, 12], true)) {
-            throw new RuntimeException('Seleccione la duración del pago antes de confirmarlo.');
+        if ($mesesDuracion < 1 || $mesesDuracion > 120) {
+            throw new RuntimeException('La duración del pago debe ser válida (entre 1 y 120 meses).');
         }
 
         if (!Database::beginTransaction()) throw new RuntimeException('Ya hay una transacción en curso.');

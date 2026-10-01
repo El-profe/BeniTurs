@@ -1,1 +1,9 @@
-Require all denied
+# Prohibir acceso web directo a los archivos almacenados
+# Las imágenes y comprobantes se sirven únicamente mediante controladores autorizados
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

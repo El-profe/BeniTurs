@@ -8,6 +8,7 @@ use App\Models\Tarifa;
 use App\Services\PagoService;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
+use PDO;
 
 class PagoController extends Controller {
     private Pago $pagoModel;
@@ -36,6 +37,35 @@ class PagoController extends Controller {
                        ORDER BY v.fecha_vencimiento ASC";
         $proximosVencimientos = $db->query($sqlAlertas)->fetchAll();
 
+        // Resumen financiero: solo pagos confirmados cuentan como ingresos reales.
+        $totalConfirmado = (float)$db->query("SELECT COALESCE(SUM(monto), 0) FROM pagos WHERE estado = 'CONFIRMADO'")->fetchColumn();
+        $pendiente = $db->query("SELECT COUNT(*) AS cantidad, COALESCE(SUM(monto), 0) AS monto FROM pagos WHERE estado = 'PENDIENTE'")->fetch(PDO::FETCH_ASSOC);
+        $comerciosVigentes = (int)$db->query("SELECT COUNT(DISTINCT v.id_lugar) FROM vigencias v INNER JOIN lugares l ON l.id_lugar = v.id_lugar WHERE l.tipo_lugar = 'COMERCIAL' AND v.fecha_vencimiento >= CURDATE()")->fetchColumn();
+
+        $nombresMeses = ['01' => 'Ene', '02' => 'Feb', '03' => 'Mar', '04' => 'Abr', '05' => 'May', '06' => 'Jun', '07' => 'Jul', '08' => 'Ago', '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dic'];
+        $ingresosMeses = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $fecha = strtotime("-$i months");
+            $clave = date('Y-m', $fecha);
+            $ingresosMeses[$clave] = ['label' => $nombresMeses[date('m', $fecha)] . ' ' . date('y', $fecha), 'total' => 0.0, 'pagos' => 0];
+        }
+
+        $stmtIngresos = $db->query("SELECT DATE_FORMAT(COALESCE(fecha_confirmacion, fecha_pago_declarada, created_at), '%Y-%m') AS mes, SUM(monto) AS total, COUNT(*) AS pagos FROM pagos WHERE estado = 'CONFIRMADO' GROUP BY mes");
+        while ($fila = $stmtIngresos->fetch(PDO::FETCH_ASSOC)) {
+            if (isset($ingresosMeses[$fila['mes']])) {
+                $ingresosMeses[$fila['mes']]['total'] = (float)$fila['total'];
+                $ingresosMeses[$fila['mes']]['pagos'] = (int)$fila['pagos'];
+            }
+        }
+
+        $mesActual = date('Y-m');
+        $mesAnterior = date('Y-m', strtotime('-1 month'));
+        $recaudadoMes = $ingresosMeses[$mesActual]['total'] ?? 0.0;
+        $recaudadoMesAnterior = $ingresosMeses[$mesAnterior]['total'] ?? 0.0;
+        $variacionMensual = $recaudadoMesAnterior > 0
+            ? (($recaudadoMes - $recaudadoMesAnterior) / $recaudadoMesAnterior) * 100
+            : null;
+
         $mensaje = $_SESSION['admin_flash'] ?? null;
         $error   = $_SESSION['admin_error'] ?? null;
         unset($_SESSION['admin_flash'], $_SESSION['admin_error']);
@@ -45,6 +75,19 @@ class PagoController extends Controller {
             'pagos'                => $pagos,
             'filtroActual'         => $filtroEstado,
             'proximosVencimientos' => $proximosVencimientos,
+            'estadisticas'          => [
+                'totalConfirmado'    => $totalConfirmado,
+                'recaudadoMes'       => $recaudadoMes,
+                'pendienteCantidad'  => (int)($pendiente['cantidad'] ?? 0),
+                'pendienteMonto'     => (float)($pendiente['monto'] ?? 0),
+                'comerciosVigentes'  => $comerciosVigentes,
+                'variacionMensual'   => $variacionMensual,
+            ],
+            'graficoIngresos'       => [
+                'labels'  => array_column($ingresosMeses, 'label'),
+                'valores' => array_column($ingresosMeses, 'total'),
+                'pagos'   => array_column($ingresosMeses, 'pagos'),
+            ],
             'mensaje'              => $mensaje,
             'error'                => $error,
             'csrfToken'            => CsrfMiddleware::obtenerToken()
@@ -54,20 +97,31 @@ class PagoController extends Controller {
     public function crear(): void {
         $db = Database::getConnection();
         
-        // Listar únicamente establecimientos comerciales
-        $comercios = $db->query("SELECT l.id_lugar, l.nombre, s.plan_solicitado FROM lugares l
-            LEFT JOIN solicitudes s ON s.id_solicitud = l.id_solicitud_origen
-            WHERE l.tipo_lugar = 'COMERCIAL' ORDER BY l.nombre ASC")->fetchAll();
+        // Listar establecimientos comerciales con su ultimo vencimiento registrado
+        $sqlComercios = "SELECT l.id_lugar, l.nombre, s.plan_solicitado,
+                                (SELECT MAX(v.fecha_vencimiento) FROM vigencias v
+                                 INNER JOIN pagos p ON p.id_pago = v.id_pago
+                                 WHERE v.id_lugar = l.id_lugar AND p.estado = 'CONFIRMADO') AS ultimo_vencimiento
+                         FROM lugares l
+                         LEFT JOIN solicitudes s ON s.id_solicitud = l.id_solicitud_origen
+                         WHERE l.tipo_lugar = 'COMERCIAL' 
+                         ORDER BY l.nombre ASC";
+        $comercios = $db->query($sqlComercios)->fetchAll(PDO::FETCH_ASSOC);
+        
         $tarifa = $this->tarifaModel->obtenerTarifaVigente();
+        $planesActivos = $this->tarifaModel->listarPlanesActivos();
+        $idLugarSeleccionado = filter_var($_GET['id_lugar'] ?? null, FILTER_VALIDATE_INT) ?: 0;
         $error = $_SESSION['admin_error'] ?? null;
         unset($_SESSION['admin_error']);
 
         $this->render('admin/pagos/crear', [
-            'titulo'    => 'Registrar Pago Pendiente',
-            'comercios' => $comercios,
-            'tarifa'    => $tarifa,
-            'error'     => $error,
-            'csrfToken' => CsrfMiddleware::obtenerToken()
+            'titulo'              => 'Registrar Pago Comercial',
+            'comercios'           => $comercios,
+            'idLugarSeleccionado' => $idLugarSeleccionado,
+            'tarifa'              => $tarifa,
+            'planesActivos'       => $planesActivos,
+            'error'               => $error,
+            'csrfToken'           => CsrfMiddleware::obtenerToken()
         ], 'admin');
     }
 
@@ -80,18 +134,46 @@ class PagoController extends Controller {
 
         $idLugar         = (int)($_POST['id_lugar'] ?? 0);
         $tarifa          = $this->tarifaModel->obtenerTarifaVigente();
-        $idTarifa        = (int)($tarifa['id_tarifa'] ?? 0);
-        $meses          = filter_var($_POST['meses_duracion'] ?? null, FILTER_VALIDATE_INT);
+        $idTarifa        = (int)($tarifa['id_tarifa'] ?? 1);
+        $meses           = filter_var($_POST['meses_duracion'] ?? null, FILTER_VALIDATE_INT);
         $monto           = (float)($_POST['monto'] ?? 0);
         $fechaDeclarada  = trim($_POST['fecha_pago_declarada'] ?? date('Y-m-d'));
         $comprobante     = trim($_POST['numero_comprobante'] ?? '');
         $metodo          = trim($_POST['metodo_pago'] ?? 'Transferencia bancaria / QR');
         $observaciones   = trim($_POST['observaciones'] ?? '');
+        $tipoPlan        = trim($_POST['tipo_plan_modalidad'] ?? 'ESTANDAR');
 
-        if ($idLugar <= 0 || $monto <= 0 || !is_finite($monto) || !$tarifa || !in_array($meses, [1, 12], true)) {
-            $_SESSION['admin_error'] = 'Seleccione un comercio e indique un monto válido.';
+        if ($idLugar <= 0 || $monto <= 0 || !is_finite($monto) || !$tarifa || $meses === false || $meses < 1 || $meses > 120) {
+            $_SESSION['admin_error'] = 'Seleccione un comercio e indique una cantidad de meses (1 a 120) y monto válidos.';
             header("Location: {$this->config['base_url']}/admin/pagos/crear");
             exit();
+        }
+
+        // Buscar si existe una tarifa específica registrada para esa duración exacta
+        $idTarifaInput = (int)($_POST['id_tarifa'] ?? 0);
+        if ($idTarifaInput > 0) {
+            $planCoincidente = $this->tarifaModel->buscarPorId($idTarifaInput);
+            if ($planCoincidente && (int)$planCoincidente['meses_duracion'] === $meses) {
+                $idTarifa = (int)$planCoincidente['id_tarifa'];
+            }
+        }
+
+        // Cálculo de desglose de ahorro comercial para auditoría interna
+        $tarifaBaseMensual = (float)($tarifa['monto_mensual'] ?? 250.00);
+        $precioRegular = round($meses * $tarifaBaseMensual, 2);
+        $ahorroCalculado = max(0, round($precioRegular - $monto, 2));
+
+        if ($ahorroCalculado > 0 || $tipoPlan === 'PERSONALIZADO') {
+            $porcentajeAhorro = $precioRegular > 0 ? round(($ahorroCalculado / $precioRegular) * 100, 1) : 0;
+            $etiquetaAhorro = sprintf(
+                "[Plan Personalizado: %d mes(es) | Tarifa regular: Bs %.2f | Importe acordado: Bs %.2f | Ahorro: Bs %.2f (%.1f%%)]",
+                $meses,
+                $precioRegular,
+                $monto,
+                $ahorroCalculado,
+                $porcentajeAhorro
+            );
+            $observaciones = !empty($observaciones) ? "{$etiquetaAhorro} {$observaciones}" : $etiquetaAhorro;
         }
 
         try {
@@ -119,7 +201,7 @@ class PagoController extends Controller {
             exit();
         }
 
-        $_SESSION['admin_flash'] = "Pago #{$idPago} registrado exitosamente en estado PENDIENTE.";
+        $_SESSION['admin_flash'] = "Pago #{$idPago} registrado exitosamente por {$meses} mes(es) en estado PENDIENTE.";
         header("Location: {$this->config['base_url']}/admin/pagos");
         exit();
     }

@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($titulo ?? 'Panel') ?> | Trinidad Admin</title>
+    <title><?= htmlspecialchars($titulo ?? 'Panel') ?> | BeniTurs Admin</title>
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars($baseUrl) ?>/assets/img/logo2.png?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/img/logo2.png') ?>">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Bootstrap 5.3.3 CSS (Local) -->
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/vendor/bootstrap/css/bootstrap.min.css?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
+    <!-- Bootstrap Icons (Local) -->
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
     <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl) ?>/assets/css/admin.css?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/css/admin.css') ?>">
 </head>
 <body>
@@ -18,12 +21,12 @@
     <aside id="adminSidebar" class="d-lg-none" aria-label="Menú de administración">
         <div class="sidebar-header">
             <a href="<?= htmlspecialchars($baseUrl) ?>/admin/dashboard" class="d-flex align-items-center gap-2 text-decoration-none">
-                <div class="brand-icon-admin">
-                    <i class="bi bi-compass-fill fs-5"></i>
-                </div>
+                
                 <div class="lh-sm">
-                    <span class="fs-5 fw-bold text-white d-block">Trinidad<span class="text-warning">Admin</span></span>
-                    <small class="text-white-50 extra-small" style="font-size: 0.68rem;">Gestión Centralizada</small>
+                    <img src="<?= htmlspecialchars($baseUrl) ?>/assets/img/logo.png" 
+                    alt="BeniTurs" 
+                    class="navbar-logo"
+                    height="42">
                 </div>
             </a>
         </div>
@@ -73,6 +76,16 @@
                     <a href="<?= htmlspecialchars($baseUrl) ?>/admin/reportes" class="nav-admin-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'reportes')) ? 'active' : '' ?>">
                         <i class="bi bi-bar-chart-line-fill"></i>
                         <span>Reportes Analíticos</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-label">Ajustes & Catálogos</div>
+            <ul class="nav-admin mb-3">
+                <li>
+                    <a href="<?= htmlspecialchars($baseUrl) ?>/admin/catalogos" class="nav-admin-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'catalogos')) ? 'active' : '' ?>">
+                        <i class="bi bi-sliders2"></i>
+                        <span>Parámetros & Planes</span>
                     </a>
                 </li>
             </ul>
@@ -165,7 +178,11 @@
             </a>
             <a href="<?= htmlspecialchars($baseUrl) ?>/admin/reportes" class="admin-top-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'reportes')) ? 'active' : '' ?>">
                 <i class="bi bi-bar-chart-line-fill"></i>
-                    <span>Reportes</span>
+                <span>Reportes</span>
+            </a>
+            <a href="<?= htmlspecialchars($baseUrl) ?>/admin/catalogos" class="admin-top-link <?= (str_contains($_SERVER['REQUEST_URI'] ?? '', 'catalogos')) ? 'active' : '' ?>">
+                <i class="bi bi-sliders2"></i>
+                <span>Parámetros & Planes</span>
             </a>
 
         </nav>
@@ -176,7 +193,10 @@
         <?= $content ?>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Bundle JS (Local) -->
+    <script src="<?= htmlspecialchars($baseUrl) ?>/assets/vendor/bootstrap/js/bootstrap.bundle.min.js?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+    <!-- Chart.js 4.4.4 (Local) -->
+    <script src="<?= htmlspecialchars($baseUrl) ?>/assets/vendor/chartjs/chart.umd.min.js?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/vendor/chartjs/chart.umd.min.js') ?>"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const sidebar = document.getElementById('adminSidebar');

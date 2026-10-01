@@ -1,14 +1,14 @@
 <?php
 /**
- * Credenciales locales para la base de datos MariaDB de XAMPP.
- * Archivo local no expuesto públicamente.
+ * Configuración de la base de datos MariaDB / MySQL.
+ * Lee desde variables de entorno (.env) con respaldo local por defecto para Laragon.
  */
 
 return [
-    'host'     => '127.0.0.1',
-    'port'     => 3306,
-    'database' => 'trinidad_turismo_db',
-    'username' => 'root',
-    'password' => '', 
-    'charset'  => 'utf8mb4'
+    'host'     => (string)env('DB_HOST', '127.0.0.1'),
+    'port'     => (int)env('DB_PORT', 3306),
+    'database' => (string)env('DB_DATABASE', 'benitours'),
+    'username' => (string)env('DB_USERNAME', 'root'),
+    'password' => (string)env('DB_PASSWORD', ''), 
+    'charset'  => (string)env('DB_CHARSET', 'utf8mb4')
 ];

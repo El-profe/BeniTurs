@@ -21,8 +21,8 @@
             
             <div class="row g-3 align-items-center">
                 <div class="col-md-7">
-                    <input type="file" name="fotografia" class="form-control" accept="image/jpeg,image/png,image/webp" required>
-                    <small class="text-muted extra-small">Admite JPG, PNG, WEBP hasta 5 MB.</small>
+                    <input type="file" id="inputFotografiaNegocio" name="fotografia" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+                    <small class="text-muted extra-small">Admite JPG, PNG, WEBP hasta 5 MB. Se optimizará automáticamente.</small>
                 </div>
                 <div class="col-md-3">
                     <div class="form-check">
@@ -74,3 +74,13 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/shared/compresor-imagen.js?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/js/shared/compresor-imagen.js') ?>"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('inputFotografiaNegocio');
+    if (input && window.CompresorImagen) {
+        window.CompresorImagen.vincular(input, { maxDimension: 1280, calidad: 0.82 });
+    }
+});
+</script>

@@ -27,6 +27,18 @@ class CuentaNegocio {
         return $cuenta ?: null;
     }
 
+    public function buscarPorLugar(int $idLugar): ?array {
+        $sql = "SELECT cn.*, l.nombre AS nombre_negocio, l.tipo_lugar, l.slug
+                FROM cuentas_negocio cn
+                INNER JOIN lugares l ON cn.id_lugar = l.id_lugar
+                WHERE cn.id_lugar = :id_lugar
+                LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id_lugar' => $idLugar]);
+        $cuenta = $stmt->fetch();
+        return $cuenta ?: null;
+    }
+
     public function actualizarUltimoAcceso(int $idCuenta): void {
         $sql = "UPDATE cuentas_negocio SET ultimo_acceso = NOW() WHERE id_cuenta = :id";
         $stmt = $this->db->prepare($sql);

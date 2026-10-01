@@ -13,6 +13,8 @@ class AuthController extends Controller {
 
     public function __construct() {
         parent::__construct();
+        // Conservar el origen del navegador (localhost o túnel) y su cookie de sesión.
+        $this->config['base_url'] = rtrim(parse_url($this->config['base_url'], PHP_URL_PATH) ?: '', '/');
         $this->adminModel = new Administrador();
     }
 
@@ -26,6 +28,8 @@ class AuthController extends Controller {
         }
 
         $error = $_SESSION['auth_error'] ?? null;
+        $usuarioAnterior = $_SESSION['auth_usuario'] ?? '';
+        unset($_SESSION['auth_usuario']);
         unset($_SESSION['auth_error']);
 
         $csrfToken = CsrfMiddleware::obtenerToken();
@@ -33,6 +37,7 @@ class AuthController extends Controller {
         $this->render('auth/login', [
             'titulo'    => 'Acceso Administrativo',
             'error'     => $error,
+            'usuarioAnterior' => $usuarioAnterior,
             'csrfToken' => $csrfToken
         ], 'publico');
     }
@@ -48,16 +53,17 @@ class AuthController extends Controller {
 
         // 1. Validar Token CSRF
         $token = $_POST['csrf_token'] ?? '';
-        if (!CsrfMiddleware::validarToken($token)) {
+        if (!is_string($token) || !CsrfMiddleware::validarToken($token)) {
             $_SESSION['auth_error'] = 'Token de seguridad inválido o sesión expirada. Intente de nuevo.';
             header("Location: {$this->config['base_url']}/admin/login");
             exit();
         }
 
-        $identificador = trim($_POST['usuario'] ?? '');
-        $password = (string)($_POST['password'] ?? '');
+        $identificador = is_string($_POST['usuario'] ?? null) ? trim($_POST['usuario']) : '';
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+        $_SESSION['auth_usuario'] = mb_substr($identificador, 0, 120);
 
-        if (empty($identificador) || empty($password)) {
+        if ($identificador === '' || $password === '' || mb_strlen($identificador) > 120) {
             $_SESSION['auth_error'] = 'Por favor complete todos los campos.';
             header("Location: {$this->config['base_url']}/admin/login");
             exit();
@@ -76,6 +82,7 @@ class AuthController extends Controller {
 
         // 2. Establecer sesión segura con regeneración de ID
         session_regenerate_id(true);
+        unset($_SESSION['auth_usuario'], $_SESSION['auth_error']);
         $_SESSION['admin_id']     = $admin['id_administrador'];
         $_SESSION['admin_nombre'] = $admin['nombre'];
         $_SESSION['admin_user']   = $admin['usuario'];

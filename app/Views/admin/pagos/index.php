@@ -48,6 +48,91 @@
         </div>
     <?php endif; ?>
 
+    <!-- Resumen financiero y comercial -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="payment-kpi-card payment-kpi-total p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <span class="small text-uppercase fw-bold opacity-75">Ingresos confirmados</span>
+                        <h4 class="fw-bold mt-2 mb-1">Bs <?= number_format($estadisticas['totalConfirmado'], 0) ?></h4>
+                        <small class="opacity-75">Histórico acumulado</small>
+                    </div>
+                    <i class="bi bi-wallet2 fs-3 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="payment-kpi-card payment-kpi-month p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <span class="small text-uppercase fw-bold opacity-75">Generado este mes</span>
+                        <h4 class="fw-bold mt-2 mb-1">Bs <?= number_format($estadisticas['recaudadoMes'], 0) ?></h4>
+                        <small class="opacity-75">
+                            <?php if ($estadisticas['variacionMensual'] !== null): ?>
+                                <?= $estadisticas['variacionMensual'] >= 0 ? '+' : '' ?><?= number_format($estadisticas['variacionMensual'], 1) ?>% vs. mes anterior
+                            <?php else: ?>
+                                Primer mes con comparación
+                            <?php endif; ?>
+                        </small>
+                    </div>
+                    <i class="bi bi-graph-up-arrow fs-3 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="payment-kpi-card payment-kpi-pending p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <span class="small text-uppercase fw-bold opacity-75">Por validar</span>
+                        <h4 class="fw-bold mt-2 mb-1">Bs <?= number_format($estadisticas['pendienteMonto'], 0) ?></h4>
+                        <small class="opacity-75"><?= $estadisticas['pendienteCantidad'] ?> comprobante(s) pendiente(s)</small>
+                    </div>
+                    <i class="bi bi-hourglass-split fs-3 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="payment-kpi-card payment-kpi-active p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <span class="small text-uppercase fw-bold opacity-75">Comercios vigentes</span>
+                        <h4 class="fw-bold mt-2 mb-1"><?= $estadisticas['comerciosVigentes'] ?></h4>
+                        <small class="opacity-75">Con cobertura activa hoy</small>
+                    </div>
+                    <i class="bi bi-patch-check-fill fs-3 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="admin-card p-3 p-md-4 h-100">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1"><i class="bi bi-bar-chart-line-fill text-success me-2"></i>Ingresos confirmados por mes</h5>
+                        <p class="small text-muted mb-0">Evolución financiera de los últimos seis meses.</p>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">Solo pagos confirmados</span>
+                </div>
+                <div style="height: 275px; position: relative;"><canvas id="chartIngresosPagos"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="payment-insight-card h-100 p-4">
+                <span class="small text-uppercase fw-bold text-success">Prioridad operativa</span>
+                <h5 class="fw-bold text-dark mt-2">Revisa los comprobantes pendientes</h5>
+                <p class="text-muted small mb-3">Cada pago confirmado activa o extiende la cobertura comercial correspondiente.</p>
+                <div class="d-flex align-items-center gap-3 pt-2 border-top">
+                    <span class="payment-insight-number"><?= $estadisticas['pendienteCantidad'] ?></span>
+                    <span class="small text-muted">pagos esperan verificación administrativa</span>
+                </div>
+                <a href="<?= htmlspecialchars($baseUrl) ?>/admin/pagos?estado=PENDIENTE" class="btn btn-success rounded-pill w-100 mt-4">Ver pagos pendientes <i class="bi bi-arrow-right ms-1"></i></a>
+            </div>
+        </div>
+    </div>
+
     <!-- Tabla Principal de Pagos -->
     <div class="admin-card overflow-hidden">
         <div class="table-responsive">
@@ -193,3 +278,55 @@
     </div>
     <?php endif; ?>
 <?php endforeach; ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const contexto = document.getElementById('chartIngresosPagos')?.getContext('2d');
+    if (!contexto || !window.Chart) return;
+
+    const etiquetas = <?= json_encode($graficoIngresos['labels'], JSON_UNESCAPED_UNICODE) ?>;
+    const ingresos = <?= json_encode($graficoIngresos['valores']) ?>;
+    const pagosMes = <?= json_encode($graficoIngresos['pagos']) ?>;
+    const gradiente = contexto.createLinearGradient(0, 0, 0, 260);
+    gradiente.addColorStop(0, 'rgba(25, 135, 84, 0.48)');
+    gradiente.addColorStop(1, 'rgba(25, 135, 84, 0.03)');
+
+    new Chart(contexto, {
+        type: 'bar',
+        data: {
+            labels: etiquetas,
+            datasets: [{
+                label: 'Ingresos confirmados',
+                data: ingresos,
+                backgroundColor: gradiente,
+                borderColor: '#198754',
+                borderWidth: 2,
+                borderRadius: 8,
+                maxBarThickness: 54
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#092611',
+                    padding: 11,
+                    callbacks: {
+                        label: (context) => ' Bs ' + Number(context.parsed.y).toLocaleString('es-BO', { minimumFractionDigits: 2 }),
+                        afterLabel: (context) => ' ' + pagosMes[context.dataIndex] + ' pago(s) confirmado(s)'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.06)' },
+                    ticks: { callback: (valor) => 'Bs ' + Number(valor).toLocaleString('es-BO') }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+});
+</script>

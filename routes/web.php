@@ -40,6 +40,10 @@ $router->post('/admin/lugares/guardar', [LugarController::class, 'guardar']);
 $router->get('/admin/lugares/editar', [LugarController::class, 'editar']);
 $router->post('/admin/lugares/actualizar', [LugarController::class, 'actualizar']);
 $router->post('/admin/lugares/cambiar-habilitacion', [LugarController::class, 'cambiarHabilitacion']);
+$router->post('/admin/lugares/eliminar-foto', [LugarController::class, 'eliminarFoto']);
+$router->post('/admin/lugares/establecer-portada', [LugarController::class, 'establecerPortada']);
+$router->post('/admin/lugares/restablecer-clave', [LugarController::class, 'restablecerClave']);
+$router->post('/admin/lugares/crear-cuenta', [LugarController::class, 'crearCuenta']);
 
 // Solicitudes
 $router->get('/admin/solicitudes', [AdminSolicitudController::class, 'index']);
@@ -59,7 +63,17 @@ $router->post('/admin/pagos/rechazar-eliminar', [PagoController::class, 'rechaza
 
 // Reportes Analíticos
 $router->get('/admin/reportes', [\App\Controllers\Admin\ReporteController::class, 'index']);
+$router->get('/admin/reportes/comercio', [\App\Controllers\Admin\ReporteController::class, 'comercioIndividual']);
 $router->get('/admin/reportes/exportar', [\App\Controllers\Admin\ReporteController::class, 'exportar']);
+
+// Parámetros y Catálogos (Categorías, Municipios, Planes)
+$router->get('/admin/catalogos', [\App\Controllers\Admin\CatalogoController::class, 'index']);
+$router->post('/admin/catalogos/categorias/guardar', [\App\Controllers\Admin\CatalogoController::class, 'guardarCategoria']);
+$router->post('/admin/catalogos/categorias/estado', [\App\Controllers\Admin\CatalogoController::class, 'cambiarEstadoCategoria']);
+$router->post('/admin/catalogos/municipios/guardar', [\App\Controllers\Admin\CatalogoController::class, 'guardarMunicipio']);
+$router->post('/admin/catalogos/municipios/estado', [\App\Controllers\Admin\CatalogoController::class, 'cambiarEstadoMunicipio']);
+$router->post('/admin/catalogos/planes/guardar', [\App\Controllers\Admin\CatalogoController::class, 'guardarPlan']);
+$router->post('/admin/catalogos/planes/estado', [\App\Controllers\Admin\CatalogoController::class, 'cambiarEstadoPlan']);
 
 
 // Portal de las cuentas aprovisionadas.
@@ -75,3 +89,7 @@ $router->post('/negocio/fotos/eliminar', [\App\Controllers\Negocio\PanelControll
 $router->get('/negocio/promociones', [\App\Controllers\Negocio\PanelController::class, 'promociones']);
 $router->post('/negocio/promociones/guardar', [\App\Controllers\Negocio\PanelController::class, 'guardarPromocion']);
 $router->post('/negocio/promociones/estado', [\App\Controllers\Negocio\PanelController::class, 'estadoPromocion']);
+$router->get('/negocio/perfil', [\App\Controllers\Negocio\PanelController::class, 'perfil']);
+$router->post('/negocio/perfil/guardar', [\App\Controllers\Negocio\PanelController::class, 'guardarPerfil']);
+$router->get('/negocio/renovar', [\App\Controllers\Negocio\PanelController::class, 'renovar']);
+$router->post('/negocio/renovar/guardar', [\App\Controllers\Negocio\PanelController::class, 'guardarRenovacion']);

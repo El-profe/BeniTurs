@@ -30,8 +30,8 @@ class UbicacionNegocioService {
         if (!$cuenta->fetchColumn()) throw new RuntimeException('No tienes acceso a este negocio.');
 
         $stmt = $db->prepare('UPDATE lugares l INNER JOIN cuentas_negocio c ON c.id_lugar = l.id_lugar
-            SET l.direccion = ?, l.referencia_ubicacion = ?, l.coordenadas_gps = ?
+            SET l.direccion = ?, l.referencia_ubicacion = ?, l.latitud = ?, l.longitud = ?
             WHERE l.id_lugar = ? AND c.id_cuenta = ? AND c.activo = 1');
-        $stmt->execute([$direccion, $referencia ?: null, $mapa['coordenadas'], $idLugar, $idCuenta]);
+        $stmt->execute([$direccion, $referencia ?: null, $mapa['latitud'], $mapa['longitud'], $idLugar, $idCuenta]);
     }
 }

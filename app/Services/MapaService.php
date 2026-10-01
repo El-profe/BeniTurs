@@ -23,6 +23,8 @@ class MapaService {
         ]);
 
         return [
+            'latitud'     => $latitud,
+            'longitud'    => $longitud,
             'coordenadas' => $coordenadas,
             'url' => 'https://www.openstreetmap.org/export/embed.html?' . http_build_query([
                 'bbox' => $limites,

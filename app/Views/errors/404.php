@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Recurso no encontrado | <?= htmlspecialchars($appName ?? 'Trinidad Turismo') ?></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars($baseUrl ?? '') ?>/assets/img/logo2.png">
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '') ?>/assets/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '') ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '') ?>/assets/css/app.css">
 </head>
 <body class="bg-light d-flex align-items-center justify-content-center min-vh-100">

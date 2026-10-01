@@ -71,18 +71,25 @@ class SolicitudController extends Controller {
 
     public function aprovisionar(): void {
         $id = $this->validarPeticion();
+        $metodoPago = trim($_POST['metodo_pago'] ?? '');
+        $numeroRecibo = trim($_POST['numero_recibo'] ?? '');
         try {
-            $resultado = \App\Services\SolicitudService::aprovisionarNegocioCompleto($id, (int)$_SESSION['admin_id']);
+            $resultado = \App\Services\SolicitudService::aprovisionarNegocioCompleto(
+                $id, 
+                (int)$_SESSION['admin_id'], 
+                $metodoPago ?: null, 
+                $numeroRecibo ?: null
+            );
         } catch (\PDOException $e) {
             error_log('Error al aprovisionar solicitud #' . $id);
             $this->json(['success'=>false,'error'=>'No se pudo completar el aprovisionamiento. No se guardaron cambios.'], 500);
         } catch (\RuntimeException | \InvalidArgumentException $e) {
             $this->json(['success'=>false,'error'=>$e->getMessage()], 409);
         } catch (\Throwable $e) {
-            error_log('Error al aprovisionar solicitud #' . $id);
-            $this->json(['success'=>false,'error'=>'No se pudo completar el aprovisionamiento.'], 500);
+            error_log('Error al aprovisionar solicitud #' . $id . ' ' . $e->getMessage());
+            $this->json(['success'=>false,'error'=>'No se pudo completar el aprovisionamiento: ' . $e->getMessage()], 500);
         }
-        $this->json(['success'=>true,'estado'=>'ACEPTADA','message'=>'Negocio activado. Puedes entregar las credenciales por WhatsApp.'] + $resultado);
+        $this->json(['success'=>true,'estado'=>'ACEPTADA','message'=>'Negocio activado con éxito.'] + $resultado);
     }
     public function comprobante(): void {
         $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);

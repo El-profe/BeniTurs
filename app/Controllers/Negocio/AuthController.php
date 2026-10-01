@@ -10,6 +10,8 @@ class AuthController extends Controller {
 
     public function __construct() {
         parent::__construct();
+        // Conservar el origen del navegador (localhost o túnel) y su cookie de sesión.
+        $this->config['base_url'] = rtrim(parse_url($this->config['base_url'], PHP_URL_PATH) ?: '', '/');
         $this->cuentaModel = new CuentaNegocio();
     }
 
@@ -20,11 +22,14 @@ class AuthController extends Controller {
         }
 
         $error = $_SESSION['negocio_auth_error'] ?? null;
+        $usuarioAnterior = $_SESSION['negocio_auth_usuario'] ?? '';
+        unset($_SESSION['negocio_auth_usuario']);
         unset($_SESSION['negocio_auth_error']);
 
         $this->render('negocio/login', [
             'titulo'    => 'Portal de Negocios y Comercios',
             'error'     => $error,
+            'usuarioAnterior' => $usuarioAnterior,
             'csrfToken' => CsrfMiddleware::obtenerToken()
         ], 'publico');
     }
@@ -35,16 +40,18 @@ class AuthController extends Controller {
             exit();
         }
 
-        if (!CsrfMiddleware::validarToken($_POST['csrf_token'] ?? '')) {
+        $token = $_POST['csrf_token'] ?? '';
+        if (!is_string($token) || !CsrfMiddleware::validarToken($token)) {
             $_SESSION['negocio_auth_error'] = 'Sesión expirada. Intente nuevamente.';
             header("Location: {$this->config['base_url']}/negocio/login");
             exit();
         }
 
-        $usuario = trim($_POST['usuario'] ?? '');
-        $password = (string)($_POST['password'] ?? '');
+        $usuario = is_string($_POST['usuario'] ?? null) ? trim($_POST['usuario']) : '';
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+        $_SESSION['negocio_auth_usuario'] = mb_substr($usuario, 0, 120);
 
-        if (empty($usuario) || empty($password)) {
+        if ($usuario === '' || $password === '' || mb_strlen($usuario) > 120) {
             $_SESSION['negocio_auth_error'] = 'Ingrese usuario y contraseña.';
             header("Location: {$this->config['base_url']}/negocio/login");
             exit();
@@ -61,6 +68,7 @@ class AuthController extends Controller {
         }
 
         session_regenerate_id(true);
+        unset($_SESSION['negocio_auth_usuario'], $_SESSION['negocio_auth_error']);
         $_SESSION['negocio_id']       = $cuenta['id_cuenta'];
         $_SESSION['negocio_lugar_id'] = $cuenta['id_lugar'];
         $_SESSION['negocio_nombre']   = $cuenta['nombre_negocio'];

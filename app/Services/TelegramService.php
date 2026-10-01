@@ -6,31 +6,39 @@ use RuntimeException;
 use Throwable;
 
 class TelegramService {
+    // Transporte sustituible en pruebas aisladas, nunca desde parámetros HTTP.
+    private static ?\Closure $transporte = null;
     public static function configuracion(): array {
         return require dirname(__DIR__, 2) . '/config/comercial.php';
     }
 
     public static function configurado(): bool {
         $c = self::configuracion();
-        return preg_match('/\A\d+:[A-Za-z0-9_-]+\z/D', $c['telegram_token']) === 1
-            && preg_match('/\A[1-9]\d*\z/D', (string)$c['admin_chat_id']) === 1;
+        if (empty($c['telegram_activo'])) {
+            return false;
+        }
+        return preg_match('/\A\d+:[A-Za-z0-9_-]+\z/D', (string)($c['telegram_token'] ?? '')) === 1
+            && preg_match('/\A-?[1-9]\d*\z/D', (string)($c['admin_chat_id'] ?? '')) === 1;
     }
 
     private static function api(string $metodo, array $datos): array {
+        if (self::$transporte !== null) return (self::$transporte)($metodo, $datos);
         if (!self::configurado()) throw new RuntimeException('Telegram no está configurado.');
         $config = self::configuracion();
         $curl = curl_init('https://api.telegram.org/bot' . $config['telegram_token'] . '/' . $metodo);
         curl_setopt_array($curl, [CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$datos,
             CURLOPT_RETURNTRANSFER=>true, CURLOPT_CONNECTTIMEOUT=>5, CURLOPT_TIMEOUT=>20,
-            CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS, CURLOPT_FOLLOWLOCATION=>false]);
+            CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS, CURLOPT_FOLLOWLOCATION=>false,
+            CURLOPT_SSL_VERIFYPEER=>true, CURLOPT_SSL_VERIFYHOST=>2]);
         $respuesta = curl_exec($curl);
+        $errorCurl = curl_errno($curl);
         $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
         $json = is_string($respuesta) ? json_decode($respuesta, true) : null;
         if ($status !== 200 || !is_array($json) || empty($json['ok'])) {
             // Nunca incluir la URL (contiene el token), el cuerpo o credenciales en logs.
             if ($metodo === 'editMessageCaption' && ($json['description'] ?? '') === 'Bad Request: message is not modified') return [];
-            throw new RuntimeException('Telegram no confirmó ' . $metodo . ' (HTTP ' . $status . ').');
+            throw new RuntimeException('Telegram no confirmó ' . $metodo . ' (HTTP ' . $status . ', cURL ' . $errorCurl . ').');
         }
         return $json;
     }
@@ -60,9 +68,36 @@ class TelegramService {
         return (int)$respuesta['result']['message_id'];
     }
 
+    public static function notificarNuevaSolicitudTexto(int $idSolicitud, array $datos): int {
+        $config = self::configuracion();
+        $texto = "🔔 <b>NUEVA SOLICITUD EN EFECTIVO - BENITURS</b>\n" .
+            '🏪 <b>Negocio:</b> ' . self::html($datos['nombre_establecimiento']) . "\n" .
+            '📌 <b>Categoría:</b> ' . self::html($datos['categoria'] ?? '') . "\n" .
+            '👤 <b>Dueño:</b> ' . self::html($datos['nombre_solicitante']) . "\n" .
+            '📞 <b>WhatsApp:</b> ' . self::html($datos['telefono_contacto']) . "\n" .
+            "💵 <b>Método:</b> PAGO EN EFECTIVO (Pendiente de cobro)\n" .
+            '💳 <b>Plan:</b> ' . self::html($datos['plan_solicitado']) . ' (Bs ' . number_format((float)$datos['monto_declarado'], 2) . ")\n" .
+            '🕒 <b>Fecha:</b> ' . date('d/m/Y H:i', strtotime($datos['created_at'])) . "\nSolicitud #" . $idSolicitud;
+        $teclado = ['inline_keyboard'=>[
+            [['text'=>'✅ Cobrar Efectivo y Activar','callback_data'=>'aprobar_solicitud_' . $idSolicitud]],
+            [['text'=>'❌ Rechazar','callback_data'=>'rechazar_solicitud_' . $idSolicitud]]
+        ]];
+        $respuesta = self::api('sendMessage', ['chat_id'=>$config['admin_chat_id'],
+            'text'=>$texto, 'parse_mode'=>'HTML', 'protect_content'=>'true',
+            'reply_markup'=>json_encode($teclado, JSON_UNESCAPED_UNICODE)]);
+        return (int)$respuesta['result']['message_id'];
+    }
+
     public static function actualizarMensaje(int $chatId, int $messageId, string $nuevoTexto): void {
-        self::api('editMessageCaption', ['chat_id'=>$chatId, 'message_id'=>$messageId,
-            'caption'=>$nuevoTexto, 'reply_markup'=>json_encode(['inline_keyboard'=>[]])]);
+        try {
+            self::api('editMessageCaption', ['chat_id'=>$chatId, 'message_id'=>$messageId,
+                'caption'=>$nuevoTexto, 'reply_markup'=>json_encode(['inline_keyboard'=>[]])]);
+        } catch (\Throwable $e) {
+            try {
+                self::api('editMessageText', ['chat_id'=>$chatId, 'message_id'=>$messageId,
+                    'text'=>$nuevoTexto, 'reply_markup'=>json_encode(['inline_keyboard'=>[]])]);
+            } catch (\Throwable $e2) {}
+        }
     }
 
     public static function responderCallback(string $callbackId, string $texto, bool $showAlert = false): void {
@@ -79,21 +114,25 @@ class TelegramService {
     }
 
     public static function encolar(int $idSolicitud, string $tipo): void {
+        if (!self::configurado()) return;
         if (!in_array($tipo, ['NUEVA','RESOLUCION'], true)) throw new RuntimeException('Tipo de notificación inválido.');
         Database::getConnection()->prepare('INSERT INTO telegram_notificaciones (id_solicitud,tipo) VALUES (?,?) ON DUPLICATE KEY UPDATE id_solicitud=VALUES(id_solicitud)')
             ->execute([$idSolicitud,$tipo]);
     }
 
     // Reserva corta en BD, HTTP fuera de la transacción. Un trabajador caído se reintenta.
-    public static function procesarPendientes(int $limite = 10): int {
+    public static function procesarPendientes(int $limite = 10, ?int $idSolicitud = null): int {
         if (!self::configurado()) return 0;
         $db = Database::getConnection();
         $procesados = 0;
         for ($i = 0; $i < $limite; $i++) {
             if (!Database::beginTransaction()) throw new RuntimeException('Trabajador dentro de una transacción.');
             try {
-                $job = $db->query("SELECT * FROM telegram_notificaciones WHERE estado='PENDIENTE'
-                    AND disponible_desde <= NOW() ORDER BY id_notificacion LIMIT 1 FOR UPDATE")->fetch();
+                $consulta = $db->prepare("SELECT * FROM telegram_notificaciones WHERE estado='PENDIENTE'
+                    AND disponible_desde <= NOW()" . ($idSolicitud !== null ? ' AND id_solicitud = ?' : '') .
+                    ' ORDER BY id_notificacion LIMIT 1 FOR UPDATE');
+                $consulta->execute($idSolicitud !== null ? [$idSolicitud] : []);
+                $job = $consulta->fetch();
                 if (!$job) { $db->commit(); break; }
                 $db->prepare('UPDATE telegram_notificaciones SET intentos=intentos+1, disponible_desde=DATE_ADD(NOW(), INTERVAL 2 MINUTE) WHERE id_notificacion=?')
                     ->execute([$job['id_notificacion']]);
@@ -107,8 +146,10 @@ class TelegramService {
                 $db->prepare("UPDATE telegram_notificaciones SET estado='ENVIADA', ultimo_error=NULL WHERE id_notificacion=?")->execute([$job['id_notificacion']]);
                 $procesados++;
             } catch (Throwable $e) {
+                $detalle = preg_match('/\ATelegram no confirmó [A-Za-z]+ \(HTTP \d+, cURL \d+\)\.\z/u', $e->getMessage())
+                    ? $e->getMessage() : 'No se confirmó la entrega; se reintentará.';
                 $db->prepare('UPDATE telegram_notificaciones SET ultimo_error=?, disponible_desde=DATE_ADD(NOW(), INTERVAL 5 MINUTE) WHERE id_notificacion=?')
-                    ->execute(['No se confirmó la entrega; se reintentará.', $job['id_notificacion']]);
+                    ->execute([$detalle, $job['id_notificacion']]);
                 error_log('Telegram: entrega pendiente #' . $job['id_notificacion']);
             }
         }
@@ -118,10 +159,13 @@ class TelegramService {
     private static function procesar(array $job): void {
         $db = Database::getConnection();
         $s = (new \App\Models\Solicitud())->buscarPorId((int)$job['id_solicitud']);
-        if (!$s) return;
         if ($job['tipo'] === 'NUEVA') {
             if ($s['estado'] !== 'PENDIENTE' || $s['telegram_message_id']) return;
-            $messageId = self::notificarNuevaSolicitud((int)$s['id_solicitud'], $s, ComprobanteService::ruta($s['comprobante_archivo']));
+            if (!empty($s['comprobante_archivo'])) {
+                $messageId = self::notificarNuevaSolicitud((int)$s['id_solicitud'], $s, ComprobanteService::ruta($s['comprobante_archivo']));
+            } else {
+                $messageId = self::notificarNuevaSolicitudTexto((int)$s['id_solicitud'], $s);
+            }
             $db->prepare('UPDATE solicitudes SET telegram_message_id=? WHERE id_solicitud=?')->execute([$messageId,$s['id_solicitud']]);
             // Si la resolución coincidió con sendPhoto, reactivar el trabajo de resolución.
             $db->prepare("UPDATE telegram_notificaciones SET estado='PENDIENTE', disponible_desde=NOW() WHERE id_solicitud=? AND tipo='RESOLUCION'")->execute([$s['id_solicitud']]);

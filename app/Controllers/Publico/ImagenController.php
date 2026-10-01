@@ -48,10 +48,27 @@ class ImagenController extends Controller {
             exit();
         }
 
+        $mtime = filemtime($rutaFisica);
+        $etag = '"' . md5($foto['nombre_archivo'] . $mtime) . '"';
+        $lastModified = gmdate('D, d M Y H:i:s ', $mtime) . 'GMT';
+
         header('Content-Type: ' . $foto['mime_type']);
         header('Content-Length: ' . filesize($rutaFisica));
-        header('Cache-Control: private, no-store');
+        header('Cache-Control: public, max-age=2592000, stale-while-revalidate=86400');
+        header('ETag: ' . $etag);
+        header('Last-Modified: ' . $lastModified);
         header('X-Content-Type-Options: nosniff');
+
+        // Soporte de caché del navegador: HTTP 304 Not Modified
+        $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : null;
+        $ifModifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+
+        if (($ifNoneMatch !== null && $ifNoneMatch === $etag) ||
+            ($ifModifiedSince !== false && $ifModifiedSince >= $mtime)) {
+            http_response_code(304);
+            exit();
+        }
+
         readfile($rutaFisica);
         exit();
     }

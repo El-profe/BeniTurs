@@ -16,15 +16,15 @@ class Pago {
      */
     public function registrar(array $datos): int {
         $meses = filter_var($datos['meses_duracion'] ?? null, FILTER_VALIDATE_INT);
-        if (!in_array($meses, [1, 12], true)) {
-            throw new \InvalidArgumentException('Seleccione un plan mensual o anual.');
+        if ($meses === false || $meses < 1 || $meses > 120) {
+            throw new \InvalidArgumentException('La duración del plan debe ser entre 1 y 120 meses.');
         }
         $sql = "INSERT INTO pagos (
                     id_lugar, id_tarifa, monto, meses_duracion, fecha_pago_declarada,
-                    numero_comprobante, metodo_pago, estado, observaciones
+                    numero_comprobante, comprobante_archivo, metodo_pago, estado, observaciones, es_registro_inicial
                 ) VALUES (
                     :id_lugar, :id_tarifa, :monto, :meses, :fecha_declarada,
-                    :comprobante, :metodo, 'PENDIENTE', :obs
+                    :comprobante, :archivo, :metodo, 'PENDIENTE', :obs, :es_inicial
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -35,7 +35,9 @@ class Pago {
             ':meses'            => $meses,
             ':fecha_declarada'  => $datos['fecha_pago_declarada'],
             ':comprobante'      => $datos['numero_comprobante'] ?? null,
+            ':archivo'          => $datos['comprobante_archivo'] ?? null,
             ':metodo'           => $datos['metodo_pago'] ?? 'Transferencia bancaria / QR',
+            ':es_inicial'       => !empty($datos['es_registro_inicial']) ? 1 : 0,
             ':obs'              => $datos['observaciones'] ?? null
         ]);
 

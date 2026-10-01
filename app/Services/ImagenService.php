@@ -56,7 +56,7 @@ class ImagenService {
         $nombreServidor = 'lugar_' . bin2hex(random_bytes(8)) . '_' . time() . '.' . $extension;
         $destino = self::getDirectorioStorage() . $nombreServidor;
 
-        if (!move_uploaded_file($file['tmp_name'], $destino)) {
+        if (!self::optimizarYGuardar($file['tmp_name'], $destino, $mime)) {
             throw new \RuntimeException('No se pudo guardar la fotografía en el servidor.');
         }
 
@@ -64,7 +64,69 @@ class ImagenService {
             'nombre_archivo'  => $nombreServidor,
             'nombre_original' => basename($file['name']),
             'mime_type'       => $mime,
-            'tamano_bytes'    => (int)$file['size']
+            'tamano_bytes'    => (int)filesize($destino)
         ];
     }
+
+    /**
+     * Redimensiona (máx 1200px) y comprime la imagen usando PHP GD antes de almacenarla
+     */
+    private static function optimizarYGuardar(string $origen, string $destino, string $mime, int $maxDim = 1200, int $calidad = 82): bool {
+        if (!extension_loaded('gd')) {
+            return move_uploaded_file($origen, $destino);
+        }
+
+        $info = @getimagesize($origen);
+        if (!$info) {
+            return move_uploaded_file($origen, $destino);
+        }
+
+        [$anchoOrig, $altoOrig] = $info;
+
+        $srcImg = match ($mime) {
+            'image/jpeg' => @imagecreatefromjpeg($origen),
+            'image/png'  => @imagecreatefrompng($origen),
+            'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($origen) : null,
+            default      => null
+        };
+
+        if (!$srcImg) {
+            return move_uploaded_file($origen, $destino);
+        }
+
+        $nuevoAncho = $anchoOrig;
+        $nuevoAlto = $altoOrig;
+        if ($anchoOrig > $maxDim || $altoOrig > $maxDim) {
+            if ($anchoOrig >= $altoOrig) {
+                $nuevoAncho = $maxDim;
+                $nuevoAlto = (int)round(($altoOrig * $maxDim) / $anchoOrig);
+            } else {
+                $nuevoAlto = $maxDim;
+                $nuevoAncho = (int)round(($anchoOrig * $maxDim) / $altoOrig);
+            }
+        }
+
+        $dstImg = imagecreatetruecolor($nuevoAncho, $nuevoAlto);
+
+        if ($mime === 'image/png' || $mime === 'image/webp') {
+            imagealphablending($dstImg, false);
+            imagesavealpha($dstImg, true);
+            $trans = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+            imagefilledrectangle($dstImg, 0, 0, $nuevoAncho, $nuevoAlto, $trans);
+        }
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $nuevoAncho, $nuevoAlto, $anchoOrig, $altoOrig);
+        imagedestroy($srcImg);
+
+        $ok = match ($mime) {
+            'image/jpeg' => imagejpeg($dstImg, $destino, $calidad),
+            'image/png'  => imagepng($dstImg, $destino, 8),
+            'image/webp' => function_exists('imagewebp') ? imagewebp($dstImg, $destino, $calidad) : false,
+            default      => false
+        };
+
+        imagedestroy($dstImg);
+        return $ok;
+    }
 }
+

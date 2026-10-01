@@ -3,8 +3,11 @@ namespace App\Controllers\Publico;
 
 use App\Core\Controller;
 use App\Models\Categoria;
+use App\Models\Municipio;
+use App\Models\Tarifa;
 use App\Middleware\CsrfMiddleware;
 use App\Services\SolicitudEntradaService;
+use App\Services\TelegramService;
 use InvalidArgumentException;
 use Throwable;
 
@@ -12,13 +15,16 @@ class SolicitudController extends Controller {
     public function index(): void {
         $categorias = array_filter((new Categoria())->listarTodasActivas(),
             static fn(array $categoria): bool => $categoria['tipo_defecto'] === 'COMERCIAL');
+        $municipios = (new Municipio())->listarActivos();
+        $planes = (new Tarifa())->listarPlanesActivos();
+
         $this->render('publico/solicitudes/formulario', [
-            'titulo' => 'Publica tu negocio en BeniTurs',
-            'categorias' => $categorias,
-            'tarifaMensual' => 250.00,
-            'tarifaAnual' => 2500.00,
-            'cobro' => require dirname(__DIR__, 3) . '/config/comercial.php',
-            'csrfToken' => CsrfMiddleware::obtenerToken()
+            'titulo'        => 'Publica tu negocio en BeniTurs',
+            'categorias'    => $categorias,
+            'municipios'    => $municipios,
+            'planes'        => $planes,
+            'cobro'         => require dirname(__DIR__, 3) . '/config/comercial.php',
+            'csrfToken'     => CsrfMiddleware::obtenerToken()
         ], 'publico');
     }
 
@@ -35,7 +41,7 @@ class SolicitudController extends Controller {
         try {
             $archivo = $_FILES['comprobante'] ?? [];
             if (!is_array($archivo)) throw new InvalidArgumentException('Adjunte un comprobante válido.');
-            SolicitudEntradaService::recibir($_POST, $archivo);
+            $idSolicitud = SolicitudEntradaService::recibir($_POST, $archivo);
         } catch (InvalidArgumentException $e) {
             $this->json(['success'=>false, 'error'=>$e->getMessage()], 422);
             return;
@@ -43,6 +49,12 @@ class SolicitudController extends Controller {
             error_log('Error al recibir solicitud: ' . $e->getMessage());
             $this->json(['success'=>false, 'error'=>'No se pudo guardar la solicitud. Intente nuevamente.'], 500);
             return;
+        }
+        // La solicitud ya está confirmada: un fallo de Telegram no debe deshacerla.
+        try {
+            TelegramService::procesarPendientes(1, $idSolicitud);
+        } catch (Throwable $e) {
+            error_log('Telegram: solicitud #' . $idSolicitud . ' guardada; entrega pendiente.');
         }
         $this->json(['success'=>true,
             'message'=>'Solicitud enviada con éxito. Verificaremos tu abono en breve.']);

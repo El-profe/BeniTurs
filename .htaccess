@@ -1,13 +1,19 @@
 # trinidad_turismo/.htaccess
-# Configuración perimetral de seguridad para Apache en XAMPP
+# Configuración perimetral de seguridad para Apache (Local Laragon y Servidor de Producción / InfinityFree)
 
 # Desactivar listado de directorios
 Options -Indexes
 
-# Proteger directorios internos contra acceso HTTP directo
+# Proteger archivos ocultos (.env, .git, etc.) contra acceso HTTP directo
 <IfModule mod_authz_core.c>
     <FilesMatch "^\.">
         Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.">
+        Order allow,deny
+        Deny from all
     </FilesMatch>
 </IfModule>
 
@@ -17,7 +23,9 @@ Options -Indexes
     # Bloquear el acceso directo a carpetas sensibles desde el navegador
     RewriteRule ^(app|config|database|storage|docs)(/.*)?$ - [F,L,NC]
 
-    # Redirigir el acceso raíz a la carpeta public/
-    RewriteCond %{REQUEST_URI} !^/trinidad_turismo/public/
+    # Redirigir el acceso a la carpeta public/ de forma agnóstica
+    # Funciona tanto si está en la raíz de un dominio (InfinityFree) como en una subcarpeta (Laragon)
+    RewriteCond %{REQUEST_URI} !^/(.*)/public/
+    RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>

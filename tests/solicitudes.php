@@ -37,18 +37,17 @@ try {
     (new ReflectionProperty(App\Core\Database::class,'instance'))->setValue(null,$db);
     (new ReflectionProperty(ComprobanteService::class,'directorio'))->setValue(null,$tmp.'/comprobantes/');
     (new ReflectionProperty(App\Services\ImagenService::class,'directorio'))->setValue(null,$tmp.'/fotos/');
-    $sql=file_get_contents(dirname(__DIR__).'/database/migrations/001_crear_tablas.sql');
+    $sql=file_get_contents(dirname(__DIR__).'/database/trinidad_turismo_db3.sql');
     $sql=preg_replace('/CREATE DATABASE IF NOT EXISTS.*?;/s','',$sql);
     $sql=preg_replace('/^USE .*?;/m','',$sql);
     $db->exec($sql);
-    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/004_cuarentena_aprovisionamiento.sql'));
-    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/005_autoservicio.sql'));
-    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/006_flujo_solicitud_comercial.sql'));
-    $db->exec(file_get_contents(dirname(__DIR__).'/database/migrations/006_flujo_solicitud_comercial.sql'));
+    verificar((int)$db->query('SELECT COUNT(*) FROM municipios')->fetchColumn() === 0, 'El volcado db3 original no incluye municipios');
+    $municipiosSql = file_get_contents(dirname(__DIR__).'/database/seeds/002_municipios_db3.sql');
+    $db->exec($municipiosSql);
+    $db->exec($municipiosSql);
+    verificar((int)$db->query('SELECT COUNT(*) FROM municipios')->fetchColumn() === 8, 'Municipios db3 completos y carga repetible sin duplicados');
     $db->prepare("INSERT INTO administradores (nombre,usuario,email,password_hash) VALUES ('Auditor','auditor','auditor@test.invalid',?)")
         ->execute([password_hash('PruebaAdmin123!',PASSWORD_BCRYPT)]);
-    $db->exec("INSERT INTO categorias (nombre,slug,tipo_defecto) VALUES ('Comercial','comercial','COMERCIAL'),('Publico','publico','PUBLICO')");
-    $db->exec("INSERT INTO tarifas (monto_mensual,descripcion,vigente_desde) VALUES (250,'Prueba','2020-01-01')");
     $png=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
     file_put_contents($tmp.'/valido.png',$png);
     file_put_contents($tmp.'/falso.jpg','<?php echo "no es una imagen";');
@@ -83,7 +82,7 @@ try {
         'usuario_solicitado'=>'negocio_prueba','password'=>' clave con espacios ', 'numero_comprobante'=>'OP-123',
         'comprobante'=>new CURLFile($tmp.'/valido.png','image/png','pago.png')];
     foreach ([
-        ['csrf_token'=>'invalido'], ['id_categoria'=>'2'], ['telefono_contacto'=>'123'],
+        ['csrf_token'=>'invalido'], ['id_categoria'=>'4'], ['id_municipio'=>'999999'], ['telefono_contacto'=>'123'],
         ['nombre_solicitante'=>''], ['nombre_establecimiento'=>str_repeat('x',151)], ['plan_solicitado'=>'OTRO'],
         ['comprobante'=>new CURLFile($tmp.'/falso.jpg','image/jpeg','pago.jpg')],
         ['comprobante'=>new CURLFile($tmp.'/grande.png','image/png','pago.png')], ['comprobante'=>'']
@@ -93,6 +92,18 @@ try {
     }
     verificar((int)$db->query('SELECT COUNT(*) FROM solicitudes')->fetchColumn()===0 && count(glob($tmp.'/comprobantes/*'))===0,'Rechazos no dejan solicitudes ni archivos');
     unset($payload['usuario_solicitado'], $payload['password']);
+    rechaza(fn()=>App\Services\SolicitudEntradaService::validarDatos($payload + ['id_municipio'=>['1']]), 'Rechaza municipio con formato de arreglo');
+    $db->beginTransaction();
+    try {
+        $db->exec("UPDATE tarifas SET id_tarifa=25, monto=325 WHERE codigo_plan='MENSUAL'");
+        $datos = App\Services\SolicitudEntradaService::validarDatos($payload + ['monto_declarado'=>'1']);
+        verificar($datos['id_tarifa'] === 25 && $datos['monto_declarado'] === 325.0,
+            'Solicitud usa ID y precio del catalogo, ignorando el monto del navegador');
+        $db->exec("UPDATE tarifas SET vigente_desde=DATE_ADD(CURDATE(), INTERVAL 1 DAY) WHERE id_tarifa=25");
+        rechaza(fn()=>App\Services\SolicitudEntradaService::validarDatos($payload), 'No permite contratar una tarifa futura');
+    } finally {
+        $db->rollBack();
+    }
     require __DIR__ . '/flujo_comercial_casos.php';
 } finally {
     if (is_resource($server)) { proc_terminate($server); proc_close($server); }

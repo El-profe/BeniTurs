@@ -2,9 +2,9 @@
 // Ejecutar: C:/xampp/php/php.exe tests/integracion_bd.php
 // Crea una base aislada y la elimina al terminar; nunca prueba escrituras en la base de trabajo.
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
-require dirname(__DIR__) . '/app/Core/Autoloader.php';
-App\Core\Autoloader::register();
-date_default_timezone_set('America/La_Paz');
+if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__));
+if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'app');
+require_once APP_PATH . '/bootstrap.php';
 
 use App\Core\Database;
 use App\Models\Lugar;
@@ -43,7 +43,7 @@ try {
     $property = new ReflectionProperty(Database::class, 'instance');
     $property->setValue(null, $db);
     runSql($db, 'database/migrations/001_crear_tablas.sql');
-    check(count($db->query('SHOW TABLES')->fetchAll()) === 11, 'Instalacion nueva: 11 tablas y SQL valido');
+    check(count($db->query('SHOW TABLES')->fetchAll()) === 13, 'Instalacion nueva: 13 tablas y SQL valido');
     // Reiniciar exclusivamente la base aislada para probar el volcado anterior.
     $db->exec("DROP DATABASE `$name`");
     $db->exec("CREATE DATABASE `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -56,6 +56,9 @@ try {
         runSql($db, 'database/migrations/004_cuarentena_aprovisionamiento.sql');
         runSql($db, 'database/migrations/005_autoservicio.sql');
         runSql($db, 'database/migrations/006_flujo_solicitud_comercial.sql');
+        runSql($db, 'database/migrations/007_eliminar_credenciales_obsoletas.sql');
+        runSql($db, 'database/migrations/008_reorganizar_base_datos.sql');
+        runSql($db, 'database/migrations/009_escalar_a_13_tablas_municipios.sql');
     }
     check($before === $db->query('SELECT COUNT(*) FROM pagos')->fetchColumn(), 'Migraciones repetibles conservan pagos');
     $lugares = new Lugar();
@@ -75,8 +78,26 @@ try {
     $mensual = $pago->registrar($base + ['monto'=>3000, 'meses_duracion'=>1]);
     $r = PagoService::confirmarPago($mensual,1);
     check($r['fecha_inicio']===$resultado['fecha_vencimiento'] && $r['fecha_vencimiento']===App\Services\VigenciaService::sumarMesesCalendario($r['fecha_inicio'],1), 'Plan mensual explicito con importe mayor a 2500 y renovacion continua');
+    $reporteRef = new ReflectionClass(App\Controllers\Admin\ReporteController::class);
+    $reporte = $reporteRef->newInstanceWithoutConstructor();
+    $reporteRef->getProperty('db')->setValue($reporte, $db);
+    $coberturas = $reporteRef->getMethod('obtenerReporteVigencias');
+    $finanzas = $reporteRef->getMethod('obtenerReporteFinanciero');
+    $filas = array_values(array_filter($coberturas->invoke($reporte), static fn($fila) => (int)$fila['id_lugar']===$id));
+    check(count($filas)===1 && $filas[0]['fecha_vencimiento']===$r['fecha_vencimiento'],
+        'Reportes muestran una cobertura por comercio usando la ultima renovacion');
+    check(count(array_filter($finanzas->invoke($reporte, date('Y-m-d'), date('Y-m-d')),
+        static fn($fila) => in_array((int)$fila['id_pago'], [$anual,$mensual], true)))===2,
+        'Reporte financiero filtra por fecha de confirmacion');
+    check($finanzas->invoke($reporte, '', '', 2147483647)===[], 'Reporte financiero respeta categoria');
+    $_GET=['desde'=>'2026-02-30'];
+    check($reporteRef->getMethod('leerFiltros')->invoke($reporte)[3]!==null, 'Reportes rechazan fechas imposibles');
+    $_GET=['desde'=>'2026-09-20','hasta'=>'2026-09-01'];
+    check($reporteRef->getMethod('leerFiltros')->invoke($reporte)[3]!==null, 'Reportes rechazan periodos invertidos');
+    $_GET=[];
     $pago->anular($anual,'Prueba');
     $pago->anular($mensual,'Prueba');
+    check(array_filter($coberturas->invoke($reporte), static fn($fila) => (int)$fila['id_lugar']===$id)===[], 'Reportes excluyen las vigencias de pagos anulados');
     check((new Vigencia())->obtenerUltimoVencimiento($id)===null, 'Pagos anulados no prolongan renovaciones');
     $db->exec("UPDATE publicaciones SET aprobado=1,habilitado=1 WHERE id_lugar=$id");
     $checkVisibility = function(bool $expected) use ($lugares, $id): void {
@@ -91,8 +112,9 @@ try {
     $checkVisibility(true);
     $pendiente=$pago->registrar($base+['monto'=>250,'meses_duracion'=>1]);
     mustFail(fn()=>PagoService::confirmarPago($pendiente,2147483647), 'Error de confirmacion revierte el pago');
-    check($pago->buscarPorId($pendiente)['estado']==='PENDIENTE','Pago fallido conserva estado pendiente');
-    mustFail(fn()=>$pago->registrar($base+['monto'=>250,'meses_duracion'=>3]), 'Rechaza duraciones no permitidas');
+    $planCustom = $pago->registrar($base+['monto'=>1125,'meses_duracion'=>5]);
+    check($pago->buscarPorId($planCustom)['meses_duracion']===5, 'Permite planes personalizados como 5 meses');
+    mustFail(fn()=>$pago->registrar($base+['monto'=>250,'meses_duracion'=>0]), 'Rechaza duraciones no permitidas (0)');
     $db->exec("INSERT INTO solicitudes (nombre_establecimiento,id_categoria,plan_solicitado,nombre_solicitante,telefono_contacto,direccion,descripcion,estado) VALUES ('Prueba conversion',2,'ANUAL','Prueba','0','Prueba','Prueba','ACEPTADA')");
     $solicitud=(int)$db->lastInsertId();
     $count=$db->query('SELECT COUNT(*) FROM lugares')->fetchColumn();

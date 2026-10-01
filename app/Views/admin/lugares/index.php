@@ -40,7 +40,8 @@
                                 <td>
                                     <div class="fw-bold text-dark"><?= htmlspecialchars($l['nombre']) ?></div>
                                     <small class="text-muted d-block text-truncate" style="max-width: 280px; font-size: 0.75rem;">
-                                        Slug: <code><?= htmlspecialchars($l['slug']) ?></code>
+                                        <span class="badge bg-secondary-subtle text-secondary py-0 px-2 me-1"><i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($l['municipio'] ?? 'Trinidad') ?></span>
+                                        <code><?= htmlspecialchars($l['slug']) ?></code>
                                     </small>
                                 </td>
                                 <td>
@@ -122,3 +123,25 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Credenciales Generadas -->
+<?php require dirname(__DIR__) . '/parciales/modal_credenciales.php'; ?>
+
+<script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/admin/credenciales-modal.js?v=<?= filemtime(dirname(__DIR__, 4) . '/public/assets/js/admin/credenciales-modal.js') ?>" defer></script>
+
+<?php if (!empty($credencialesGeneradas)): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const datos = <?= json_encode($credencialesGeneradas, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        if (window.BeniTursModalCredenciales) {
+            window.BeniTursModalCredenciales.mostrar(datos);
+        } else {
+            setTimeout(function() {
+                if (window.BeniTursModalCredenciales) {
+                    window.BeniTursModalCredenciales.mostrar(datos);
+                }
+            }, 300);
+        }
+    });
+</script>
+<?php endif; ?>

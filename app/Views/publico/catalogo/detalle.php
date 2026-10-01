@@ -20,7 +20,7 @@
         <div class="col-lg-7 place-detail-media-column">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
                 <?php if (!empty($fotos)): ?>
-                    <div id="carruselLugar" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false" role="region" aria-roledescription="carrusel" aria-label="Fotografías de <?= htmlspecialchars($lugar['nombre']) ?>">
+                    <div id="carruselLugar" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2500" role="region" aria-roledescription="carrusel" aria-label="Fotografías de <?= htmlspecialchars($lugar['nombre']) ?>">
                         <?php if ($variasFotos): ?>
                             <div class="carousel-indicators">
                                 <?php foreach ($fotos as $indice => $foto): ?>
@@ -33,7 +33,8 @@
                                 <div class="carousel-item<?= $indice === 0 ? ' active' : '' ?>">
                                     <img src="<?= htmlspecialchars($baseUrl) ?>/imagen?f=<?= urlencode($foto['nombre_archivo']) ?>"
                                          alt="<?= htmlspecialchars($lugar['nombre']) ?> — fotografía <?= $indice + 1 ?> de <?= count($fotos) ?>"
-                                         class="d-block w-100 object-fit-cover place-detail-photo">
+                                         class="d-block w-100 object-fit-cover place-detail-photo"
+                                         <?= $indice === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" decoding="async"' ?>>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -95,13 +96,34 @@
                     <h2 class="h5 fw-bold text-dark mb-2"><i class="bi bi-clock me-2 text-warning" aria-hidden="true"></i>Horarios de atención</h2>
                     <p class="text-secondary mb-0" style="white-space: pre-line;"><?= htmlspecialchars(($lugar['horario_atencion'] ?? '') ?: 'Sin horario específico / Abierto al público') ?></p>
                 </div>
-                <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
-                    <span class="place-detail-social d-inline-flex align-items-center justify-content-center rounded-circle bg-dark text-white" role="img" aria-label="TikTok" title="TikTok">
-                        <i class="bi bi-tiktok fs-4" aria-hidden="true"></i>
-                    </span>
-                    <span class="place-detail-social d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" role="img" aria-label="Facebook" title="Facebook">
-                        <i class="bi bi-facebook fs-4" aria-hidden="true"></i>
-                    </span>
+                <?php
+                    $whatsappRaw = preg_replace('/\D/', '', $lugar['whatsapp_contacto'] ?? '');
+                    if (strlen($whatsappRaw) === 8) {
+                        $whatsappRaw = '591' . $whatsappRaw;
+                    }
+                    $mensajeWa = rawurlencode("Hola, vi la información de " . $lugar['nombre'] . " en BeniTurs y quisiera hacer una consulta.");
+                    $telefonoRaw = preg_replace('/[^\d+]/', '', $lugar['telefono_contacto'] ?? '');
+                ?>
+                <div class="border-top pt-4 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-3"><i class="bi bi-chat-dots me-2 text-success" aria-hidden="true"></i>Contacto Directo</h2>
+                    <div class="d-grid gap-2">
+                        <?php if (!empty($whatsappRaw)): ?>
+                            <a href="https://wa.me/<?= $whatsappRaw ?>?text=<?= $mensajeWa ?>" target="_blank" rel="noopener noreferrer" class="btn btn-success rounded-pill py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-whatsapp fs-5"></i> Contactar por WhatsApp
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($telefonoRaw)): ?>
+                            <a href="tel:<?= $telefonoRaw ?>" class="btn btn-outline-dark rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-telephone-fill"></i> Llamar: <?= htmlspecialchars($lugar['telefono_contacto']) ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (empty($whatsappRaw) && empty($telefonoRaw)): ?>
+                            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> Puedes visitar este lugar directamente en la dirección indicada.</p>
+                        <?php endif; ?>
+                        <button type="button" class="btn btn-light rounded-pill py-2 text-secondary fw-semibold border d-flex align-items-center justify-content-center gap-2 mt-1" id="btnCompartirLugar">
+                            <i class="bi bi-share-fill text-primary"></i> Compartir este lugar
+                        </button>
+                    </div>
                 </div>
 
                 <?php if (!empty($promociones)): ?>
@@ -123,3 +145,32 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btnCompartir = document.getElementById('btnCompartirLugar');
+    if (btnCompartir) {
+        btnCompartir.addEventListener('click', async () => {
+            const titulo = <?= json_encode($lugar['nombre'], JSON_UNESCAPED_UNICODE) ?>;
+            const url = window.location.href;
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: titulo + ' | BeniTurs',
+                        text: '¡Conoce ' + titulo + ' en Trinidad, Beni a través de BeniTurs!',
+                        url: url
+                    });
+                } catch (e) { /* Cancelado por el usuario */ }
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    const original = btnCompartir.innerHTML;
+                    btnCompartir.innerHTML = '<i class="bi bi-check-lg text-success"></i> ¡Enlace copiado!';
+                    setTimeout(() => {
+                        btnCompartir.innerHTML = original;
+                    }, 2500);
+                });
+            }
+        });
+    }
+});
+</script>

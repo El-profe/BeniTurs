@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let paso = 0;
     let enviando = false;
 
+    if (comprobante && window.CompresorImagen) {
+        window.CompresorImagen.vincular(comprobante, { maxDimension: 1280, calidad: 0.82 });
+    }
+
     function mostrarPaso(indice, enfocar = true) {
         paso = indice;
         pasos.forEach((panel, i) => { panel.hidden = i !== indice; });
@@ -20,8 +24,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (enfocar) pasos[indice].querySelector('h2').focus();
     }
+
+    function toggleMetodoPago() {
+        const esEfectivo = form.querySelector('[name="metodo_pago"]:checked')?.value === 'EFECTIVO';
+        const secDigital = document.getElementById('seccionPagoDigital');
+        const secEfectivo = document.getElementById('seccionPagoEfectivo');
+        const plan = form.querySelector('[name="plan_solicitado"]:checked');
+        const montoTexto = document.getElementById('montoEfectivoTexto');
+        
+        if (montoTexto && plan) {
+            montoTexto.textContent = `Bs ${Number(plan.dataset.monto).toLocaleString('es-BO')}`;
+        }
+
+        if (esEfectivo) {
+            secDigital?.classList.add('d-none');
+            secEfectivo?.classList.remove('d-none');
+            if (comprobante) {
+                comprobante.required = false;
+                comprobante.setCustomValidity('');
+            }
+            if (enviar) enviar.textContent = 'Enviar Solicitud (Pago en Efectivo)';
+        } else {
+            secDigital?.classList.remove('d-none');
+            secEfectivo?.classList.add('d-none');
+            if (comprobante) comprobante.required = true;
+            if (enviar) enviar.textContent = 'Enviar Solicitud y Comprobante';
+        }
+    }
+
     function validarPaso(indice) {
         for (const campo of pasos[indice].querySelectorAll('input, select, textarea')) {
+            // Ignorar campos dentro de secciones ocultas
+            if (campo.closest('.d-none')) continue;
             if (!campo.checkValidity()) {
                 mostrarPaso(indice);
                 campo.reportValidity();
@@ -30,19 +64,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return true;
     }
+
     function actualizarPlan() {
-        const anual = form.elements.plan_solicitado.value === 'ANUAL';
-        document.getElementById('montoPlan').textContent = anual ? 'Bs 2,500' : 'Bs 250';
-        document.getElementById('nombrePlan').textContent = anual ? 'Plan Anual' : 'Plan Mensual';
-        form.elements.monto_declarado.value = anual ? '2500.00' : '250.00';
+        const plan = form.querySelector('[name="plan_solicitado"]:checked');
+        document.getElementById('montoPlan').textContent = plan ? `Bs ${Number(plan.dataset.monto).toLocaleString('es-BO')}` : 'Sin planes disponibles';
+        document.getElementById('nombrePlan').textContent = plan ? plan.dataset.nombre : '';
+        form.elements.monto_declarado.value = plan ? plan.dataset.monto : '';
         form.querySelectorAll('.plan-card').forEach(label => label.classList.toggle('active-plan', label.querySelector('input').checked));
+        toggleMetodoPago();
     }
+
     function validarArchivo() {
-        const file = comprobante.files[0];
-        comprobante.setCustomValidity(file && (file.size === 0 || file.size > 5 * 1024 * 1024 ||
-            !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
-            ? 'Adjunta una imagen JPG, PNG o WEBP de hasta 5 MB.' : '');
+        const esEfectivo = form.querySelector('[name="metodo_pago"]:checked')?.value === 'EFECTIVO';
+        if (esEfectivo) {
+            if (comprobante) comprobante.setCustomValidity('');
+            return;
+        }
+        const file = comprobante?.files?.[0];
+        if (comprobante && !file) {
+            comprobante.setCustomValidity('Adjunta la foto o captura de tu comprobante bancario.');
+            return;
+        }
+        if (comprobante) {
+            comprobante.setCustomValidity(file && (file.size === 0 || file.size > 5 * 1024 * 1024 ||
+                !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+                ? 'Adjunta una imagen JPG, PNG o WEBP de hasta 5 MB.' : '');
+        }
     }
+
     function mensaje(texto, tipo) {
         alerta.replaceChildren();
         const div = document.createElement('div');
@@ -51,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alerta.append(div);
         alerta.focus();
     }
+
     form.querySelectorAll('[data-next]').forEach(btn => btn.addEventListener('click', () => {
         if (!enviando && validarPaso(paso)) mostrarPaso(Math.min(paso + 1, 2));
     }));
@@ -58,7 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!enviando) mostrarPaso(Math.max(paso - 1, 0));
     }));
     form.querySelectorAll('[name="plan_solicitado"]').forEach(radio => radio.addEventListener('change', actualizarPlan));
-    comprobante.addEventListener('change', validarArchivo);
+    form.querySelectorAll('[name="metodo_pago"]').forEach(radio => radio.addEventListener('change', toggleMetodoPago));
+    if (comprobante) comprobante.addEventListener('change', validarArchivo);
+
     form.addEventListener('submit', async event => {
         event.preventDefault();
         if (enviando) return;
@@ -71,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const datos = new FormData(form);
         enviando = true;
         enviar.disabled = true;
+        const textoOriginal = enviar.textContent;
         enviar.textContent = 'Enviando solicitud…';
         try {
             const respuesta = await http.post('/solicitudes/enviar', datos);
@@ -82,9 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             enviando = false;
             enviar.disabled = false;
-            enviar.textContent = 'Enviar Solicitud y Comprobante';
+            enviar.textContent = textoOriginal;
         }
     });
+
     mostrarPaso(0, false);
     actualizarPlan();
 });

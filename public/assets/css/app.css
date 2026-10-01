@@ -78,27 +78,25 @@ body {
     position: relative;
     isolation: isolate;
     background: radial-gradient(circle at 80% 20%, rgba(255, 193, 7, 0.15), transparent 35%),
-                linear-gradient(135deg, #092a11 0%, #155724 100%);
-
+                linear-gradient(135deg, rgba(9, 42, 17, 0.82) 0%, rgba(21, 87, 36, 0.88) 100%),
+                url('../img/hero-poster.webp') center/cover no-repeat;
 }
-.hero-video,
-.hero-overlay {
+.hero-video {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-}
-.hero-video {
     display: block;
     z-index: 0;
     object-fit: cover;
     object-position: center center;
     pointer-events: none;
+    opacity: 0.65;
 }
-.hero-overlay {
-    z-index: 1;
-    background: linear-gradient(135deg, rgba(5, 25, 11, 0.65), rgba(13, 59, 24, 0.3));
-    pointer-events: none;
+@media (max-width: 768px) {
+    .hero-video {
+        display: none !important;
+    }
 }
 .hero-content {
     position: relative;
@@ -304,7 +302,7 @@ body {
 @media (hover: hover) and (pointer: fine) {
     .guide-card:hover {
         background-color: var(--guide-color) !important;
-        transform: translateY(-6px);
+        animation: guide-card-wave 0.9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
     }
 
@@ -328,6 +326,38 @@ body {
     }
 }
 
+/* Footer público BeniTurs. */
+.site-footer {
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+    background: radial-gradient(circle at 88% 5%, rgba(255, 193, 7, .2), transparent 25%), linear-gradient(135deg, #061f0d, #0d4d27 58%, #0b3820);
+}
+.site-footer::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .35; background-image: radial-gradient(rgba(255,255,255,.13) 1px, transparent 1px); background-size: 22px 22px; }
+.site-footer-inner { position: relative; padding-top: 3.5rem; padding-bottom: 1.5rem; }
+.site-footer-logo { width: auto; height: 58px; max-width: 220px; object-fit: contain; filter: drop-shadow(0 7px 14px rgba(0, 0, 0, .22)); }
+.site-footer h5 span { color: var(--trini-gold); }
+.site-footer-tagline { color: rgba(255,255,255,.62); font-size: .72rem; letter-spacing: .04em; }
+.site-footer p { color: rgba(255,255,255,.72) !important; max-width: 520px; line-height: 1.7; }
+.site-footer-location { display: inline-flex; align-items: center; padding: .48rem .85rem; border: 1px solid rgba(255,255,255,.18); border-radius: 50rem; background: rgba(255,255,255,.08); color: #ffffff; font-size: .8rem; }
+.site-footer-location .bi { color: #ffc107 !important; }
+.site-footer h6 { color: #ffffff; letter-spacing: .08em; }
+.site-footer-links a { display: inline-flex; align-items: center; color: rgba(255,255,255,.7); text-decoration: none; transition: transform .18s ease, color .18s ease; }
+.site-footer-links a:hover { color: #ffffff; transform: translateX(4px); }
+.site-footer-links .bi, .site-footer .text-warning { color: #ffc107 !important; }
+.site-footer-bottom { border-top: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.6); }
+.site-footer-bottom .bi { color: #ffc107; }
+
+/* Vaivén vertical continuo al situar el cursor sobre una tarjeta. */
+@keyframes guide-card-wave {
+    0%, 100% {
+        transform: translateY(-6px);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .guide-card,
     .guide-card h5,
@@ -338,6 +368,10 @@ body {
     .guide-card:hover,
     .guide-card:hover .icon-circle {
         transform: none;
+    }
+
+    .guide-card:hover {
+        animation: none;
     }
 }
 
@@ -381,8 +415,8 @@ body {
 
 /* Base del Botón Circular */
 .chip-filter-icon {
-    width: 54px;
-    height: 54px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
     border: 2px solid transparent;
     display: inline-flex;
@@ -392,18 +426,19 @@ body {
     cursor: pointer;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
                 box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                background-color 0.2s ease,
+                background-color 0.25s ease,
+                border-color 0.25s ease,
                 color 0.2s ease;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
 
 .chip-filter-icon:hover {
-    transform: translateY(-3px) scale(1.06);
+    transform: translateY(-3px) scale(1.1);
 }
 
 .chip-filter-icon.active {
-    transform: translateY(-2px) scale(1.08);
+    transform: translateY(-2px) scale(1.06);
 }
 
 /* --------------------------------------------------------------------------
@@ -411,38 +446,35 @@ body {
    -------------------------------------------------------------------------- */
 
 /* 1. Todos (Verde Bosque Institucional) */
-.chip-filter-icon.cat-color-all,
-.category-filter-container .chip-filter-icon:nth-child(1) {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1;
-    color: #0d3b18;
+.chip-filter-icon.cat-color-all {
+    background-color: #0d6b2e;
+    border-color: #075421;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-all:hover,
-.category-filter-container .chip-filter-icon:nth-child(1):hover {
-    background-color: #e2e8f0;
+.chip-filter-icon.cat-color-all:hover {
+    background-color: #e2f5e8;
+    border-color: #8bd7a7;
+    color: #0d6b2e;
 }
-.chip-filter-icon.cat-color-all.active,
-.category-filter-container .chip-filter-icon:nth-child(1).active {
-    background: linear-gradient(135deg, #092611 0%, #155724 100%);
+.chip-filter-icon.cat-color-all.active {
+    background: linear-gradient(135deg, #06431c 0%, #0d6b2e 100%);
     border-color: #0d3b18;
     color: #ffffff !important;
     box-shadow: 0 8px 20px rgba(13, 59, 24, 0.35);
 }
 
 /* 2. Naturaleza / Atractivos (Verde Esmeralda) */
-.chip-filter-icon.cat-color-nature,
-.category-filter-container .chip-filter-icon:nth-child(2) {
-    background-color: #ecfdf5;
-    border-color: rgba(16, 185, 129, 0.28);
-    color: #059669;
+.chip-filter-icon.cat-color-nature {
+    background-color: #10b981;
+    border-color: #059669;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-nature:hover,
-.category-filter-container .chip-filter-icon:nth-child(2):hover {
+.chip-filter-icon.cat-color-nature:hover {
     background-color: #d1fae5;
-    border-color: #10b981;
+    border-color: #6ee7b7;
+    color: #047857;
 }
-.chip-filter-icon.cat-color-nature.active,
-.category-filter-container .chip-filter-icon:nth-child(2).active {
+.chip-filter-icon.cat-color-nature.active {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border-color: #10b981;
     color: #ffffff !important;
@@ -450,19 +482,17 @@ body {
 }
 
 /* 3. Gastronomía / Cafeterías (Naranja Ámbar) */
-.chip-filter-icon.cat-color-gastro,
-.category-filter-container .chip-filter-icon:nth-child(3) {
-    background-color: #fff7ed;
-    border-color: rgba(249, 115, 22, 0.28);
-    color: #ea580c;
+.chip-filter-icon.cat-color-gastro {
+    background-color: #f97316;
+    border-color: #ea580c;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-gastro:hover,
-.category-filter-container .chip-filter-icon:nth-child(3):hover {
+.chip-filter-icon.cat-color-gastro:hover {
     background-color: #ffedd5;
-    border-color: #f97316;
+    border-color: #fdba74;
+    color: #c2410c;
 }
-.chip-filter-icon.cat-color-gastro.active,
-.category-filter-container .chip-filter-icon:nth-child(3).active {
+.chip-filter-icon.cat-color-gastro.active {
     background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
     border-color: #f97316;
     color: #ffffff !important;
@@ -470,19 +500,17 @@ body {
 }
 
 /* 4. Vida Nocturna / Bares (Violeta Neón) */
-.chip-filter-icon.cat-color-night,
-.category-filter-container .chip-filter-icon:nth-child(4) {
-    background-color: #f5f3ff;
-    border-color: rgba(139, 92, 246, 0.28);
-    color: #7c3aed;
+.chip-filter-icon.cat-color-night {
+    background-color: #8b5cf6;
+    border-color: #7c3aed;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-night:hover,
-.category-filter-container .chip-filter-icon:nth-child(4):hover {
+.chip-filter-icon.cat-color-night:hover {
     background-color: #ede9fe;
-    border-color: #8b5cf6;
+    border-color: #c4b5fd;
+    color: #6d28d9;
 }
-.chip-filter-icon.cat-color-night.active,
-.category-filter-container .chip-filter-icon:nth-child(4).active {
+.chip-filter-icon.cat-color-night.active {
     background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
     border-color: #8b5cf6;
     color: #ffffff !important;
@@ -490,56 +518,75 @@ body {
 }
 
 /* 5. Hotelería / Hospedaje (Azul Cielo) */
-.chip-filter-icon.cat-color-hotel,
-.category-filter-container .chip-filter-icon:nth-child(5) {
-    background-color: #f0f9ff;
-    border-color: rgba(2, 132, 199, 0.28);
-    color: #0284c7;
-}
-.chip-filter-icon.cat-color-hotel:hover,
-.category-filter-container .chip-filter-icon:nth-child(5):hover {
-    background-color: #e0f2fe;
+.chip-filter-icon.cat-color-hotel {
+    background-color: #0ea5e9;
     border-color: #0284c7;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-hotel.active,
-.category-filter-container .chip-filter-icon:nth-child(5).active {
+.chip-filter-icon.cat-color-hotel:hover {
+    background-color: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #0369a1;
+}
+.chip-filter-icon.cat-color-hotel.active {
     background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
     border-color: #0284c7;
     color: #ffffff !important;
     box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4);
 }
 
-/* 6. Comercio / Tiendas (Rosa Coral) */
-.chip-filter-icon.cat-color-shop,
-.category-filter-container .chip-filter-icon:nth-child(6) {
-    background-color: #fdf2f8;
-    border-color: rgba(236, 72, 153, 0.28);
-    color: #db2777;
+/* 6. Balnearios / Recreación Acuática (Turquesa / Cian) */
+.chip-filter-icon.cat-color-water {
+    background-color: #06b6d4;
+    border-color: #0891b2;
+    color: #ffffff;
 }
-.chip-filter-icon.cat-color-shop:hover,
-.category-filter-container .chip-filter-icon:nth-child(6):hover {
-    background-color: #fce7f3;
-    border-color: #ec4899;
+.chip-filter-icon.cat-color-water:hover {
+    background-color: #cffafe;
+    border-color: #67e8f9;
+    color: #0e7490;
 }
-.chip-filter-icon.cat-color-shop.active,
-.category-filter-container .chip-filter-icon:nth-child(6).active {
-    background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
-    border-color: #ec4899;
+.chip-filter-icon.cat-color-water.active {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border-color: #0891b2;
     color: #ffffff !important;
-    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4);
 }
 
-/* 7. Categoría Adicional / Cultural (Dorado) */
+/* 7. Museos / Patrimonio Cultural (Dorado / Ámbar) */
 .chip-filter-icon.cat-color-gold {
-    background-color: #fefce8;
-    border-color: rgba(234, 179, 8, 0.35);
-    color: #ca8a04;
+    background-color: #eab308;
+    border-color: #ca8a04;
+    color: #ffffff;
+}
+.chip-filter-icon.cat-color-gold:hover {
+    background-color: #fef9c3;
+    border-color: #fde047;
+    color: #a16207;
 }
 .chip-filter-icon.cat-color-gold.active {
     background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
     border-color: #eab308;
     color: #ffffff !important;
     box-shadow: 0 8px 20px rgba(234, 179, 8, 0.4);
+}
+
+/* 8. Comercio / Tiendas (Rosa Coral) */
+.chip-filter-icon.cat-color-shop {
+    background-color: #ec4899;
+    border-color: #db2777;
+    color: #ffffff;
+}
+.chip-filter-icon.cat-color-shop:hover {
+    background-color: #fce7f3;
+    border-color: #f9a8d4;
+    color: #be185d;
+}
+.chip-filter-icon.cat-color-shop.active {
+    background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+    border-color: #ec4899;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
 }
 
 /* --------------------------------------------------------------------------
@@ -551,8 +598,8 @@ body {
     }
 
     .chip-filter-icon {
-        width: 46px;
-        height: 46px;
+        width: 52px;
+        height: 52px;
         font-size: 1.15rem;
     }
 }
@@ -562,19 +609,18 @@ body {
    BOTÓN GPS "CERCA DE MÍ" DENTRO DE CATEGORÍAS
    ========================================================================== */
 .cat-color-geo {
-    background-color: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
+    background-color: #dc2626;
+    color: #ffffff;
+    border: 2px solid #b91c1c;
     position: relative;
     transition: all 0.25s ease;
 }
 
 .cat-color-geo:hover {
-    background-color: #dc2626;
-    color: #ffffff;
-    border-color: #dc2626;
-    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
-    transform: translateY(-2px);
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+    box-shadow: 0 5px 16px rgba(220, 38, 38, 0.2);
 }
 
 /* Estado cuando la geolocalización está encendida */
@@ -643,4 +689,225 @@ body {
     0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
     70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
     100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+
+/* ==========================================================================
+   TRANSICIÓN Y ADORNO ENTRE HERO Y CATÁLOGO
+   ========================================================================== */
+.section-divider-wrapper {
+    width: 100%;
+    margin-top: -65px; /* Sube la ola para solapar el borde inferior del hero */
+    z-index: 5;
+    pointer-events: none; /* No bloquea clics */
+}
+
+/* La curva en SVG */
+.wave-divider {
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.wave-divider svg {
+    position: relative;
+    display: block;
+    width: calc(100% + 1.3px);
+    height: 70px;
+}
+
+/* Ajuste móvil */
+@media (max-width: 768px) {
+    .section-divider-wrapper {
+        margin-top: -45px;
+    }
+    .wave-divider svg {
+        height: 48px;
+    }
+    .divider-badge-pill {
+        padding: 0.3rem 0.85rem;
+    }
+}
+
+/* ==========================================================================
+   FASE 3: MAPA INTERACTIVO DE TRINIDAD Y SELECTOR DE VISTAS
+   ========================================================================== */
+.view-switcher-group {
+    background-color: #f8f9fa;
+}
+
+.view-switcher-group .btn {
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.view-switcher-group .btn.active {
+    background-color: var(--trini-green);
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(13, 59, 24, 0.25);
+}
+
+.map-catalog-card {
+    transition: box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Pines personalizados en Leaflet */
+.beniturs-map-marker {
+    background: transparent;
+    border: none;
+}
+
+.beniturs-marker-pin {
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.beniturs-marker-pin:hover {
+    transform: rotate(-45deg) scale(1.15);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+    z-index: 1000 !important;
+}
+
+.beniturs-marker-pin i {
+    transform: rotate(45deg);
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* Colores de pines por categoría */
+.pin-nature { background: #198754; }
+.pin-gastro { background: #fd7e14; }
+.pin-hotel  { background: #0d6efd; }
+.pin-night  { background: #8b5cf6; }
+.pin-museum { background: #eab308; }
+.pin-water  { background: #06b6d4; }
+.pin-shop   { background: #ec4899; }
+.pin-default{ background: var(--trini-green); }
+
+/* Marcador GPS del usuario */
+.user-gps-marker {
+    background: transparent;
+    border: none;
+}
+
+.user-gps-dot {
+    width: 18px;
+    height: 18px;
+    background: #0d6efd;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 rgba(13, 110, 253, 0.6);
+    animation: userGpsPulse 2s infinite;
+}
+
+@keyframes userGpsPulse {
+    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+
+/* Popups personalizados en Leaflet */
+.leaflet-popup-content-wrapper {
+    border-radius: 16px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18) !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+.leaflet-popup-content a {
+    text-decoration: none !important;
+}
+
+/* Estilo y contraste nítido para botón Ver Ficha en Popups Leaflet */
+.leaflet-popup-content a.btn,
+.leaflet-popup-content .btn {
+    text-decoration: none !important;
+}
+
+.leaflet-popup-content a.btn-success,
+.leaflet-popup-content .btn-success,
+.beniturs-popup-card a.btn-success,
+.beniturs-popup-card .btn-success {
+    color: #ffffff !important;
+    background-color: var(--trini-green, #198754) !important;
+    border-color: var(--trini-green, #198754) !important;
+}
+
+.leaflet-popup-content a.btn-success:hover,
+.leaflet-popup-content .btn-success:hover,
+.beniturs-popup-card a.btn-success:hover,
+.beniturs-popup-card .btn-success:hover {
+    color: #ffffff !important;
+    background-color: #0d6b2e !important;
+    border-color: #0d6b2e !important;
+}
+
+.leaflet-popup-content a.btn-success *,
+.leaflet-popup-content .btn-success *,
+.beniturs-popup-card a.btn-success *,
+.beniturs-popup-card .btn-success * {
+    color: #ffffff !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    top: 8px !important;
+    right: 8px !important;
+    color: #ffffff !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-radius: 50% !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-shadow: none !important;
+    font-size: 14px !important;
+    z-index: 10 !important;
+}
+
+.beniturs-popup-card {
+    width: 280px;
+    max-width: 85vw;
+}
+
+.beniturs-popup-img {
+    height: 140px;
+    width: 100%;
+    object-fit: cover;
+    background-color: #092611;
+}
+
+.badge-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Protección de Contenido Visual contra Descargas No Autorizadas */
+img, video, .place-card img, .hero-video, .gallery-item img, .modal-body img, .beniturs-popup-img {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+    -webkit-touch-callout: none !important; /* Bloquea el menú de 'Guardar imagen' en móviles iOS y Android */
 }

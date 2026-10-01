@@ -12,7 +12,7 @@ class SolicitudEntradaService {
         $datos = [];
         $limites = ['nombre_establecimiento'=>150, 'nombre_solicitante'=>120,
             'telefono_contacto'=>30, 'email_contacto'=>120, 'direccion'=>255,
-            'descripcion'=>10000, 'horarios'=>150, 'usuario_solicitado'=>60,
+            'descripcion'=>10000, 'horarios'=>150,
             'numero_comprobante'=>100, 'plan_solicitado'=>7];
         foreach ($limites as $campo => $maximo) {
             if (isset($entrada[$campo]) && !is_string($entrada[$campo])) {
@@ -31,7 +31,9 @@ class SolicitudEntradaService {
             throw new InvalidArgumentException('Seleccione un plan mensual o anual.');
         }
         // El precio y las credenciales nunca se aceptan del navegador.
-        $datos['monto_declarado'] = $datos['plan_solicitado'] === 'ANUAL' ? 2500.00 : 250.00;
+        $tarifa = (new \App\Models\Tarifa())->obtenerTarifaVigente($datos['plan_solicitado']);
+        if (!$tarifa) throw new InvalidArgumentException('El plan seleccionado no está disponible.');
+        $datos['monto_declarado'] = (float)$tarifa['monto'];
         if ($datos['email_contacto'] !== '' && !filter_var($datos['email_contacto'], FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('El correo electrónico no es válido.');
         }
@@ -47,14 +49,32 @@ class SolicitudEntradaService {
             throw new InvalidArgumentException('Seleccione una categoría comercial activa.');
         }
         $datos['id_categoria'] = $id;
+
+        $idMun = filter_var($entrada['id_municipio'] ?? 1, FILTER_VALIDATE_INT);
+        $municipio = $idMun && $idMun > 0 ? (new \App\Models\Municipio())->buscarPorId($idMun) : null;
+        if (!$municipio || !(int)$municipio['activo']) {
+            throw new InvalidArgumentException('Seleccione un municipio activo.');
+        }
+        $datos['id_municipio'] = $idMun;
+        $datos['id_tarifa'] = (int)$tarifa['id_tarifa'];
+
         return $datos;
     }
 
-    public static function recibir(array $entrada, array $archivo): int {
+    public static function recibir(array $entrada, ?array $archivo = null): int {
         $datos = self::validarDatos($entrada);
+        $metodo = strtoupper(trim($entrada['metodo_pago'] ?? ''));
+        $esEfectivo = ($metodo === 'EFECTIVO');
+        $datos['metodo_pago'] = $esEfectivo ? 'EFECTIVO' : 'QR / Transferencia';
+
         $db = Database::getConnection();
         if ($db->inTransaction()) throw new \RuntimeException('Ya hay una transacción en curso.');
-        $nombre = ComprobanteService::subir($archivo);
+
+        $nombre = null;
+        if (!$esEfectivo && !empty($archivo) && ($archivo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $nombre = ComprobanteService::subir($archivo);
+        }
+
         try {
             if (!Database::beginTransaction()) throw new \RuntimeException('Ya hay una transacción en curso.');
             $datos['comprobante_archivo'] = $nombre;
@@ -64,7 +84,7 @@ class SolicitudEntradaService {
             return $id;
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            if (!ComprobanteService::eliminar($nombre)) error_log('No se pudo retirar un comprobante sin solicitud.');
+            if ($nombre && !ComprobanteService::eliminar($nombre)) error_log('No se pudo retirar un comprobante sin solicitud.');
             throw $e;
         }
     }

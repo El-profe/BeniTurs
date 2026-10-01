@@ -44,10 +44,13 @@ if (isset($argv[1])) {
         },
         'csrf_token'=>App\Middleware\CsrfMiddleware::obtenerToken()
     ];
+    if ($argv[1] === 'token_array') $_POST['csrf_token'] = ['invalido'];
+    if ($argv[1] === 'usuario_array') $_POST['usuario'] = ['invalido'];
+    if ($argv[1] === 'password_array') $_POST['password'] = ['invalido'];
     $controller->procesarLogin();
     exit(1);
 }
-foreach (['correcta','incorrecta','respaldo'] as $case) {
+foreach (['correcta','incorrecta','respaldo','token_array','usuario_array','password_array'] as $case) {
     $process=proc_open([PHP_BINARY,__FILE__,$case],[1=>['pipe','w'],2=>['pipe','w']],$pipes);
     if (!is_resource($process)) throw new RuntimeException('No se pudo iniciar la prueba.');
     $out=stream_get_contents($pipes[1]); $err=stream_get_contents($pipes[2]);

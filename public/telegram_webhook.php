@@ -27,8 +27,16 @@ try {
     error_log('Base de datos no disponible para callback de Telegram.');
     http_response_code(500); exit('{"ok":false}');
 } catch (RuntimeException $e) {
-    // Conflictos de estado son definitivos; Telegram no debe reaprovisionar.
-    try { App\Services\TelegramService::responderCallback($callback['callback_id'], 'No se pudo resolver. Revisa la solicitud en el panel administrativo.', true); } catch (Throwable $ignorado) {}
+    // Solo mostrar causas conocidas; nunca credenciales, rutas o errores internos.
+    $mensaje = match ($e->getMessage()) {
+        'Clave de cifrado inválida.', 'Clave de cifrado dañada.' => 'No se pudo aprobar: la clave de cifrado del servidor no es válida. Revisa la configuración privada.',
+        'No existe una tarifa vigente para registrar el pago.' => 'No se pudo aprobar: configura una tarifa vigente en el panel administrativo.',
+        'La solicitud ya fue procesada o no está pendiente.' => 'Esta solicitud ya fue procesada. Una solicitud rechazada no se puede activar.',
+        'La categoría comercial ya no está disponible.' => 'No se pudo aprobar: la categoría comercial ya no está activa.',
+        default => 'No se pudo resolver. Revisa la solicitud en el panel administrativo.',
+    };
+    error_log('Telegram: fallo al resolver solicitud #' . $callback['id_solicitud'] . ': ' . $mensaje);
+    try { App\Services\TelegramService::responderCallback($callback['callback_id'], $mensaje, true); } catch (Throwable $ignorado) {}
     exit('{"ok":true}');
 } catch (Throwable $e) {
     error_log('Fallo al resolver solicitud por Telegram #' . $callback['id_solicitud']);
